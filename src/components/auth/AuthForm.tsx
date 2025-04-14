@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
 import { Mail, Lock, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -30,21 +31,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to authenticate
-      // For demo purposes, we'll simulate a successful login
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+      
+      if (error) {
+        throw error;
+      }
       
       // Show success message
       toast.success("Login successful!");
       
-      // Redirect to dashboard or call onSuccess callback
+      // Redirect to research page or call onSuccess callback
       if (onSuccess) {
         onSuccess();
       } else {
-        navigate("/dashboard");
+        navigate("/research");
       }
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -55,23 +62,41 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to register
-      // For demo purposes, we'll simulate a successful registration
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Register with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: registerEmail,
+        password: registerPassword,
+        options: {
+          data: {
+            first_name: registerName.split(' ')[0],
+            last_name: registerName.split(' ').slice(1).join(' '),
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
       
       // Show success message
-      toast.success("Registration successful! Please log in.");
+      if (data.user?.identities?.length === 0) {
+        toast.error("Email already registered. Please log in instead.");
+        
+        // Switch to login tab programmatically
+        const loginTab = document.getElementById("login-tab") as HTMLButtonElement;
+        if (loginTab) loginTab.click();
+      } else {
+        toast.success("Registration successful! Please verify your email to log in.");
+      }
       
-      // Clear register form and switch to login tab
+      // Clear register form
       setRegisterName("");
       setRegisterEmail("");
       setRegisterPassword("");
       
-      // Switch to login tab programmatically
-      const loginTab = document.getElementById("login-tab") as HTMLButtonElement;
-      if (loginTab) loginTab.click();
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast.error(error.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

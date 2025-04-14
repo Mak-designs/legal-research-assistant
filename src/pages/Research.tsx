@@ -5,37 +5,79 @@ import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ExternalLink, Scale } from "lucide-react";
+import { ExternalLink, Scale, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Research = () => {
   const navigate = useNavigate();
-  // In a real app, we would check for actual authentication
-  // For demo purposes, we'll simulate an authenticated state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   useEffect(() => {
-    // Check if user is authenticated
-    // For demo purposes, we'll set it to true to simulate being logged in
+    // Check if user is authenticated via Supabase
     const checkAuth = async () => {
-      // Simulate checking authentication
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsAuthenticated(true);
-      
-      // Uncomment the below code to simulate an unauthenticated user
-      // setIsAuthenticated(false);
-      // navigate("/login");
-      // toast.error("Please sign in to access research tools");
+      try {
+        setIsLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // User is not authenticated, redirect to login
+          setIsAuthenticated(false);
+          navigate("/login");
+          toast.error("Please sign in to access research tools");
+          return;
+        }
+        
+        // User is authenticated
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        navigate("/login");
+        toast.error("Authentication error. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     checkAuth();
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          navigate("/login");
+        } else if (event === 'SIGNED_IN' && session) {
+          setIsAuthenticated(true);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
   
-  const handleLogout = () => {
-    // Simulate logout
-    setIsAuthenticated(false);
-    navigate("/");
-    toast.success("You have been logged out");
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
+      navigate("/");
+      toast.success("You have been logged out");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed. Please try again.");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Verifying authentication...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

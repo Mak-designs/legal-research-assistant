@@ -1,16 +1,46 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import AuthForm from "@/components/auth/AuthForm";
-import { Scale } from "lucide-react";
+import { Scale, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // User is already logged in, redirect to research page
+          navigate("/research");
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
   
   const handleAuthSuccess = () => {
     navigate("/research");
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Checking session...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
