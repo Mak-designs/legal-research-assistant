@@ -1,13 +1,15 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import AuthForm from "@/components/auth/AuthForm";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/sonner";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -27,7 +29,18 @@ const Login = () => {
     };
     
     checkSession();
-  }, [navigate]);
+    
+    // Handle hash fragments for password reset errors
+    if (location.hash.includes("error=") && location.hash.includes("error_description=")) {
+      const errorDescription = decodeURIComponent(
+        location.hash.split("error_description=")[1].split("&")[0].replace(/\+/g, " ")
+      );
+      toast.error(errorDescription || "Password reset link is invalid or has expired");
+      
+      // Clear the hash fragment
+      window.history.replaceState(null, "", location.pathname);
+    }
+  }, [navigate, location]);
   
   const handleAuthSuccess = () => {
     navigate("/research");
