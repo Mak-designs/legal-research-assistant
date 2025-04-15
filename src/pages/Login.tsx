@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import AuthForm from "@/components/auth/AuthForm";
+import NewPasswordForm from "@/components/auth/NewPasswordForm";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -11,6 +12,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
   
   useEffect(() => {
     // Check if user is already logged in
@@ -30,12 +32,20 @@ const Login = () => {
     
     checkSession();
     
-    // Handle hash fragments for password reset errors
-    if (location.hash.includes("error=") && location.hash.includes("error_description=")) {
-      const errorDescription = decodeURIComponent(
-        location.hash.split("error_description=")[1].split("&")[0].replace(/\+/g, " ")
-      );
-      toast.error(errorDescription || "Password reset link is invalid or has expired");
+    // Handle hash fragments for password reset flow
+    if (location.hash) {
+      if (location.hash.includes("error=") && location.hash.includes("error_description=")) {
+        // Handle error in reset password flow
+        const errorDescription = decodeURIComponent(
+          location.hash.split("error_description=")[1].split("&")[0].replace(/\+/g, " ")
+        );
+        toast.error(errorDescription || "Password reset link is invalid or has expired");
+      } else if (location.hash.includes("access_token=") && location.hash.includes("type=recovery")) {
+        // Extract the access token for password reset
+        const accessToken = location.hash.split("access_token=")[1].split("&")[0];
+        setPasswordResetToken(accessToken);
+        toast.info("Please set your new password");
+      }
       
       // Clear the hash fragment
       window.history.replaceState(null, "", location.pathname);
@@ -44,6 +54,11 @@ const Login = () => {
   
   const handleAuthSuccess = () => {
     navigate("/research");
+  };
+
+  const handlePasswordUpdateSuccess = () => {
+    setPasswordResetToken(null);
+    toast.success("Password updated successfully. Please log in with your new password.");
   };
 
   if (isLoading) {
@@ -69,7 +84,15 @@ const Login = () => {
             </p>
           </div>
           
-          <AuthForm onSuccess={handleAuthSuccess} />
+          {passwordResetToken ? (
+            <NewPasswordForm 
+              accessToken={passwordResetToken} 
+              onSuccess={handlePasswordUpdateSuccess}
+              onCancel={() => setPasswordResetToken(null)}
+            />
+          ) : (
+            <AuthForm onSuccess={handleAuthSuccess} />
+          )}
         </div>
       </main>
       
