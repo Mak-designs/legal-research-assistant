@@ -7,7 +7,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Scale, Menu, Home, Search, LogIn, LogOut, BookOpen, Info } from "lucide-react";
+import { Scale, Menu, Home, Search, LogIn, LogOut, BookOpen, Info, FileText, Shield } from "lucide-react";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -49,6 +49,16 @@ const Navbar: React.FC<NavbarProps> = ({
       name: "About",
       href: "/about",
       icon: <Info className="h-5 w-5 mr-2" />,
+    },
+    {
+      name: "Privacy",
+      href: "/privacy",
+      icon: <Shield className="h-5 w-5 mr-2" />,
+    },
+    {
+      name: "Terms",
+      href: "/terms",
+      icon: <FileText className="h-5 w-5 mr-2" />,
     },
   ];
 
