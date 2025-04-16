@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Research = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [initialQuery, setInitialQuery] = useState<string | null>(null);
   
   useEffect(() => {
+    // Check for initial query from location state (when coming from Library)
+    if (location.state && location.state.initialQuery) {
+      setInitialQuery(location.state.initialQuery);
+    }
+    
     // Check if user is authenticated via Supabase
     const checkAuth = async () => {
       try {
@@ -56,7 +63,7 @@ const Research = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location]);
   
   const handleLogout = async () => {
     try {
@@ -97,8 +104,11 @@ const Research = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
+                Your Library
+              </Button>
               <Button variant="outline" size="sm" asChild>
-                <a href="#" target="_blank" rel="noreferrer" className="flex items-center">
+                <a href="https://www.law.cornell.edu/" target="_blank" rel="noreferrer" className="flex items-center">
                   <ExternalLink className="h-4 w-4 mr-1" />
                   Legal Resources
                 </a>
@@ -106,7 +116,7 @@ const Research = () => {
             </div>
           </div>
           
-          <ComparisonTool />
+          <ComparisonTool initialQuery={initialQuery} />
         </div>
       </main>
       

@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,11 +6,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { Loader2, Search, BookOpen, Scale } from "lucide-react";
 import ComparisonResults from "@/components/comparison/ComparisonResults";
+import { supabase } from "@/integrations/supabase/client";
 
-const ComparisonTool: React.FC = () => {
+interface ComparisonToolProps {
+  initialQuery?: string | null;
+}
+
+const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) => {
   const [query, setQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [results, setResults] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (initialQuery) {
+      setQuery(initialQuery);
+      handleSubmit(new Event('submit') as unknown as React.FormEvent);
+    }
+  }, [initialQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,50 +35,31 @@ const ComparisonTool: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to an NLP service
-      // For demo purposes, we'll simulate an analysis result
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Mock analysis results
-      const mockResults = {
-        query: query,
-        timestamp: new Date().toISOString(),
-        comparison: {
-          commonLaw: {
-            principles: [
-              "Relies on judicial precedent and case law",
-              "Follows the doctrine of stare decisis",
-              "Developed through court decisions over time",
-              "Based on customary practices and societal norms"
-            ],
-            relevance: "High relevance to your query regarding property rights",
-            caseExamples: [
-              "Pierson v. Post (1805) - Established possession as basis for property rights",
-              "Johnson v. M'Intosh (1823) - Addressed indigenous property rights"
-            ],
-            analysis: "Common law approaches your scenario by examining prior judicial decisions about similar property disputes. The principle of adverse possession may be particularly relevant."
-          },
-          contractLaw: {
-            principles: [
-              "Based on mutual agreement between parties",
-              "Requires offer, acceptance, consideration, and intent",
-              "Governed by state statutes and the Uniform Commercial Code",
-              "Subject to specific performance and damages remedies"
-            ],
-            relevance: "Medium relevance to property rights as it concerns agreements related to property",
-            caseExamples: [
-              "Lucy v. Zehmer (1954) - Established objective theory of contract formation",
-              "Jacob & Youngs v. Kent (1921) - Addressed substantial performance in construction contracts"
-            ],
-            analysis: "Contract law would analyze your property question by examining any written or oral agreements between parties and whether they satisfy the requirements for a valid contract."
-          }
-        },
-        recommendation: "Based on the analysis, your legal issue appears to be primarily governed by common law principles of property rights. However, any existing contracts between parties should be carefully reviewed as they may modify or supersede common law defaults."
-      };
+      const { data, error } = await supabase.functions.invoke('legal-search', {
+        body: { query: query }
+      });
       
-      setResults(mockResults);
+      if (error) throw error;
+      
+      if (session?.user) {
+        try {
+          await supabase.from('search_history').insert({
+            query: query,
+            user_id: session.user.id,
+            results_count: data.comparison.commonLaw.caseExamples.length + 
+                          data.comparison.contractLaw.caseExamples.length
+          });
+        } catch (historyError) {
+          console.error("Failed to save search history:", historyError);
+        }
+      }
+      
+      setResults(data);
       toast.success("Analysis complete!");
     } catch (error) {
+      console.error("Search error:", error);
       toast.error("Analysis failed. Please try again later.");
     } finally {
       setIsLoading(false);
