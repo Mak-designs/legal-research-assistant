@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ExternalLink, Scale, Loader2, BookOpen, Search } from "lucide-react";
+import { ExternalLink, Scale, Loader2, BookOpen, Search, Book, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const Research = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const Research = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initialQuery, setInitialQuery] = useState<string | null>(null);
+  const [recentSearches, setRecentSearches] = useState<any[]>([]);
   
   useEffect(() => {
     if (location.state && location.state.initialQuery) {
@@ -33,6 +36,21 @@ const Research = () => {
         }
         
         setIsAuthenticated(true);
+        
+        // Fetch recent searches
+        const { data: searches, error } = await supabase
+          .from('search_history')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (error) {
+          console.error("Failed to fetch recent searches:", error);
+        } else {
+          setRecentSearches(searches || []);
+        }
+        
       } catch (error) {
         console.error("Authentication check failed:", error);
         navigate("/login");
@@ -72,6 +90,12 @@ const Research = () => {
     }
   };
 
+  const handleSearchClick = (query: string) => {
+    setInitialQuery(query);
+    // This will trigger the useEffect in ComparisonTool
+    setTimeout(() => setInitialQuery(null), 100);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -94,7 +118,7 @@ const Research = () => {
                 Legal Research Assistant
               </h1>
               <p className="text-muted-foreground mt-1">
-                Compare legal principles using our advanced case law database
+                Research and compare legal principles across multiple domains
               </p>
             </div>
             
@@ -106,48 +130,133 @@ const Research = () => {
               <Button variant="outline" size="sm" asChild>
                 <a href="https://www.law.cornell.edu/" target="_blank" rel="noreferrer" className="flex items-center">
                   <ExternalLink className="h-4 w-4 mr-1" />
-                  Legal Resources
+                  Cornell Law
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href="https://www.courtlistener.com/" target="_blank" rel="noreferrer" className="flex items-center">
+                  <GraduationCap className="h-4 w-4 mr-1" />
+                  Court Listener
                 </a>
               </Button>
             </div>
           </div>
           
-          <Card className="bg-muted/50">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Search className="h-6 w-6 text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-muted/50 md:col-span-2">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/10 p-3 rounded-full">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium">Enhanced Legal Database</h3>
+                    <p className="text-muted-foreground">
+                      Our system analyzes your queries using a comprehensive database of real legal precedents, statutes, and principles across multiple domains.
+                    </p>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-background rounded-lg p-3 border">
+                        <h4 className="font-medium flex items-center">
+                          <BookOpen className="h-4 w-4 mr-2 text-primary" />
+                          Leading Case Law
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Access landmark decisions from state and federal courts
+                        </p>
+                      </div>
+                      <div className="bg-background rounded-lg p-3 border">
+                        <h4 className="font-medium flex items-center">
+                          <Book className="h-4 w-4 mr-2 text-primary" />
+                          Statutory Research
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Find relevant statutes and regulations across jurisdictions
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium">Enhanced Legal Database</h3>
-                  <p className="text-muted-foreground">
-                    Our system analyzes your queries using a comprehensive database of legal principles and cases
-                    across multiple domains including property law, contract law, tort law, constitutional law, and criminal law.
-                  </p>
-                  <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <li className="flex items-center text-sm">
-                      <span className="text-primary mr-2">•</span> 
-                      Leading case law precedents
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <span className="text-primary mr-2">•</span> 
-                      Key legal principles
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <span className="text-primary mr-2">•</span> 
-                      Comparative analysis
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <span className="text-primary mr-2">•</span> 
-                      Customized recommendations
-                    </li>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="text-lg font-medium flex items-center mb-3">
+                  <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                  Recent Searches
+                </h3>
+                
+                {recentSearches.length > 0 ? (
+                  <ul className="space-y-2">
+                    {recentSearches.map((search) => (
+                      <li key={search.id} className="text-sm">
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto py-1 px-2 w-full justify-start text-left font-normal"
+                          onClick={() => handleSearchClick(search.query)}
+                        >
+                          <Search className="h-3 w-3 mr-2 text-muted-foreground" />
+                          <span className="truncate">{search.query}</span>
+                        </Button>
+                      </li>
+                    ))}
                   </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Your recent search history will appear here
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
           
           <ComparisonTool initialQuery={initialQuery} />
+          
+          <Card className="bg-muted/30 border-dashed">
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-medium">Legal Research Domains</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Our database covers these major legal domains with real case law and statutes:
+              </p>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Domain</TableHead>
+                    <TableHead>Key Topics</TableHead>
+                    <TableHead className="hidden md:table-cell">Example Cases</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Property Law</TableCell>
+                    <TableCell>Real property, adverse possession, easements, fixtures</TableCell>
+                    <TableCell className="hidden md:table-cell">Pierson v. Post, Kelo v. City of New London</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Contract Law</TableCell>
+                    <TableCell>Agreements, consideration, performance, remedies</TableCell>
+                    <TableCell className="hidden md:table-cell">Carlill v. Carbolic Smoke Ball Co., Hadley v. Baxendale</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Tort Law</TableCell>
+                    <TableCell>Negligence, liability, damages, causation</TableCell>
+                    <TableCell className="hidden md:table-cell">Palsgraf v. Long Island Railroad Co., MacPherson v. Buick</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Constitutional Law</TableCell>
+                    <TableCell>Rights, powers, federalism, due process</TableCell>
+                    <TableCell className="hidden md:table-cell">Marbury v. Madison, Brown v. Board of Education</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Criminal Law</TableCell>
+                    <TableCell>Mens rea, search and seizure, evidence</TableCell>
+                    <TableCell className="hidden md:table-cell">Miranda v. Arizona, Gideon v. Wainwright</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
       </main>
       

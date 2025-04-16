@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, FileText, Info, Scale } from "lucide-react";
+import { BookOpen, FileText, Info, Scale, Book } from "lucide-react";
 
 interface ComparisonResultsProps {
   results: any;
@@ -61,6 +61,22 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
           
           <div>
             <h4 className="text-sm font-medium flex items-center mb-2">
+              <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+              Relevant Statutes
+            </h4>
+            <ul className="space-y-2">
+              {commonLaw.statutes?.map((statute: string, index: number) => (
+                <li key={index} className="text-sm">
+                  {statute}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <Separator />
+          
+          <div>
+            <h4 className="text-sm font-medium flex items-center mb-2">
               <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
               Analysis
             </h4>
@@ -105,6 +121,22 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
               {contractLaw.caseExamples.map((example: string, index: number) => (
                 <li key={index} className="text-sm italic">
                   {example}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <Separator />
+          
+          <div>
+            <h4 className="text-sm font-medium flex items-center mb-2">
+              <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+              Relevant Statutes
+            </h4>
+            <ul className="space-y-2">
+              {contractLaw.statutes?.map((statute: string, index: number) => (
+                <li key={index} className="text-sm">
+                  {statute}
                 </li>
               ))}
             </ul>
