@@ -1,14 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ExternalLink, Scale, Loader2, BookOpen, Search, Book, GraduationCap } from "lucide-react";
+import { ExternalLink, Scale, Loader2, BookOpen, Search, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const Research = () => {
   const navigate = useNavigate();
@@ -143,39 +141,9 @@ const Research = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-muted/50 md:col-span-2">
+            <Card className="md:col-span-2">
               <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Search className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium">Enhanced Legal Database</h3>
-                    <p className="text-muted-foreground">
-                      Our system analyzes your queries using a comprehensive database of real legal precedents, statutes, and principles across multiple domains.
-                    </p>
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-background rounded-lg p-3 border">
-                        <h4 className="font-medium flex items-center">
-                          <BookOpen className="h-4 w-4 mr-2 text-primary" />
-                          Leading Case Law
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Access landmark decisions from state and federal courts
-                        </p>
-                      </div>
-                      <div className="bg-background rounded-lg p-3 border">
-                        <h4 className="font-medium flex items-center">
-                          <Book className="h-4 w-4 mr-2 text-primary" />
-                          Statutory Research
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Find relevant statutes and regulations across jurisdictions
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ComparisonTool initialQuery={initialQuery} />
               </CardContent>
             </Card>
             
@@ -209,54 +177,6 @@ const Research = () => {
               </CardContent>
             </Card>
           </div>
-          
-          <ComparisonTool initialQuery={initialQuery} />
-          
-          <Card className="bg-muted/30 border-dashed">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-medium">Legal Research Domains</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Our database covers these major legal domains with real case law and statutes:
-              </p>
-              
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Domain</TableHead>
-                    <TableHead>Key Topics</TableHead>
-                    <TableHead className="hidden md:table-cell">Example Cases</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Property Law</TableCell>
-                    <TableCell>Real property, adverse possession, easements, fixtures</TableCell>
-                    <TableCell className="hidden md:table-cell">Pierson v. Post, Kelo v. City of New London</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Contract Law</TableCell>
-                    <TableCell>Agreements, consideration, performance, remedies</TableCell>
-                    <TableCell className="hidden md:table-cell">Carlill v. Carbolic Smoke Ball Co., Hadley v. Baxendale</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Tort Law</TableCell>
-                    <TableCell>Negligence, liability, damages, causation</TableCell>
-                    <TableCell className="hidden md:table-cell">Palsgraf v. Long Island Railroad Co., MacPherson v. Buick</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Constitutional Law</TableCell>
-                    <TableCell>Rights, powers, federalism, due process</TableCell>
-                    <TableCell className="hidden md:table-cell">Marbury v. Madison, Brown v. Board of Education</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Criminal Law</TableCell>
-                    <TableCell>Mens rea, search and seizure, evidence</TableCell>
-                    <TableCell className="hidden md:table-cell">Miranda v. Arizona, Gideon v. Wainwright</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         </div>
       </main>
       
