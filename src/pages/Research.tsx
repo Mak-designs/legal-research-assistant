@@ -1,12 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ExternalLink, Scale, Loader2 } from "lucide-react";
+import { ExternalLink, Scale, Loader2, BookOpen, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Research = () => {
   const navigate = useNavigate();
@@ -16,26 +16,22 @@ const Research = () => {
   const [initialQuery, setInitialQuery] = useState<string | null>(null);
   
   useEffect(() => {
-    // Check for initial query from location state (when coming from Library)
     if (location.state && location.state.initialQuery) {
       setInitialQuery(location.state.initialQuery);
     }
     
-    // Check if user is authenticated via Supabase
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          // User is not authenticated, redirect to login
           setIsAuthenticated(false);
           navigate("/login");
           toast.error("Please sign in to access research tools");
           return;
         }
         
-        // User is authenticated
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Authentication check failed:", error);
@@ -48,7 +44,6 @@ const Research = () => {
     
     checkAuth();
     
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_OUT') {
@@ -99,12 +94,13 @@ const Research = () => {
                 Legal Research Assistant
               </h1>
               <p className="text-muted-foreground mt-1">
-                Compare common law and contract law using our NLP analysis tool
+                Compare legal principles using our advanced case law database
               </p>
             </div>
             
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
+                <BookOpen className="h-4 w-4 mr-1" />
                 Your Library
               </Button>
               <Button variant="outline" size="sm" asChild>
@@ -115,6 +111,41 @@ const Research = () => {
               </Button>
             </div>
           </div>
+          
+          <Card className="bg-muted/50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <Search className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">Enhanced Legal Database</h3>
+                  <p className="text-muted-foreground">
+                    Our system analyzes your queries using a comprehensive database of legal principles and cases
+                    across multiple domains including property law, contract law, tort law, constitutional law, and criminal law.
+                  </p>
+                  <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <li className="flex items-center text-sm">
+                      <span className="text-primary mr-2">•</span> 
+                      Leading case law precedents
+                    </li>
+                    <li className="flex items-center text-sm">
+                      <span className="text-primary mr-2">•</span> 
+                      Key legal principles
+                    </li>
+                    <li className="flex items-center text-sm">
+                      <span className="text-primary mr-2">•</span> 
+                      Comparative analysis
+                    </li>
+                    <li className="flex items-center text-sm">
+                      <span className="text-primary mr-2">•</span> 
+                      Customized recommendations
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
           <ComparisonTool initialQuery={initialQuery} />
         </div>
