@@ -30,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     {
       name: "Home",
-      href: "/",
+      href: isAuthenticated ? "/research" : "/", // Home redirects to research for authenticated users
       icon: <Home className="h-5 w-5 mr-2" />,
     },
     {
@@ -66,7 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to={isAuthenticated ? "/research" : "/"} className="flex items-center space-x-2">
             <Scale className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">LegalAssist</span>
           </Link>

@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ExternalLink, Scale, Loader2, BookOpen, Search, GraduationCap } from "lucide-react";
+import { Scale, Loader2, BookOpen, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -124,18 +125,6 @@ const Research = () => {
               <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
                 <BookOpen className="h-4 w-4 mr-1" />
                 Your Library
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://www.law.cornell.edu/" target="_blank" rel="noreferrer" className="flex items-center">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Cornell Law
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://www.courtlistener.com/" target="_blank" rel="noreferrer" className="flex items-center">
-                  <GraduationCap className="h-4 w-4 mr-1" />
-                  Court Listener
-                </a>
               </Button>
             </div>
           </div>
