@@ -1,4 +1,3 @@
-
 import React from "react";
 import Navbar from "@/components/layout/Navbar";
 import { FileText, BookOpen, ShieldCheck, AlertTriangle } from "lucide-react";
@@ -133,9 +132,8 @@ const Terms = () => {
                   If you have any questions about these Terms, please contact us at:
                 </p>
                 <div className="not-prose bg-muted p-4 rounded-lg">
-                  <p>Email: legal@legalassist.com</p>
-                  <p>Address: 123 Legal Avenue, Suite 500, San Francisco, CA 94103</p>
-                  <p>Phone: (555) 123-4567</p>
+                  <p>Email: <a href="mailto:makumbachinyimba@gmail.com">makumbachinyimba@gmail.com</a></p>
+                  <p>Phone: 0975838560</p>
                 </div>
               </div>
             </div>
