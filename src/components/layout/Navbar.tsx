@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,6 @@ const Navbar: React.FC<NavbarProps> = ({
             <Scale className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">LegalAssist</span>
           </Link>
-          {/* Zambian Jurisdiction Badge removed */}
         </div>
 
         {/* Desktop navigation */}
@@ -142,8 +140,6 @@ const Navbar: React.FC<NavbarProps> = ({
                     {item.name}
                   </Link>
                 ))}
-              
-              {/* Zambian Jurisdiction Badge removed from mobile menu */}
               
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleLogout} className="mt-4">
