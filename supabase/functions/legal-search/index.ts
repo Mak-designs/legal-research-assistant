@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -7,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Enhanced legal dataset with real case law examples and statutes
+// Enhanced legal dataset with real case law examples and statutes - now including Zambian jurisdiction
 const legalDataset = {
   property: {
     principles: [
@@ -333,6 +332,76 @@ const legalDataset = {
       }
     ],
     analysis: "Criminal law balances public safety with defendant rights. Recent reforms focus on reducing mass incarceration, addressing racial disparities, and implementing alternatives to incarceration. Criminal jurisprudence increasingly confronts technology issues like digital privacy and cybercrime."
+  },
+  zambian: {
+    principles: [
+      "Dual legal system combining English common law and customary law",
+      "Constitution as supreme law with embedded Bill of Rights",
+      "Recognition of traditional leadership and customary law",
+      "Precedent-based system with binding decisions from higher courts",
+      "Legislative supremacy under parliamentary system",
+      "Constitutional review by Constitutional Court established in 2016"
+    ],
+    cases: [
+      {
+        title: "Attorney General v. Roy Clarke",
+        citation: "SCZ Appeal No. 96/2008",
+        description: "Supreme Court case on freedom of expression and press; overturned deportation order against a journalist"
+      },
+      {
+        title: "Nyimba Investments Limited v. Nico Insurance Zambia Limited",
+        citation: "SCZ/8/185/2012",
+        description: "Established principles regarding insurance contracts and disclosure obligations in Zambian law"
+      },
+      {
+        title: "Mbewe v. Zambia National Building Society",
+        citation: "SCZ Appeal No. 134/2006",
+        description: "Determined rights of employees in wrongful termination cases; established fair compensation principles"
+      },
+      {
+        title: "Anderson Kambela Mazoka and Others v. Levy Patrick Mwanawasa and Others",
+        citation: "SCZ/EP/01/02/03/2002",
+        description: "Election petition case that examined standards for nullifying elections and constitutional democratic principles"
+      },
+      {
+        title: "Attorney General v. Nigel Kalonde Mutuna and Others",
+        citation: "SCZ Appeal No. 088/2012",
+        description: "Addressed judicial independence and the separation of powers in the Zambian constitutional framework"
+      },
+      {
+        title: "Nawakwi v. The Attorney General",
+        citation: "SCZ/8/21/2001",
+        description: "Ruling on constitutional requirements for presidential candidates; interpretation of constitutional provisions"
+      }
+    ],
+    statutes: [
+      {
+        title: "Constitution of Zambia (Amendment) Act",
+        citation: "No. 2 of 2016",
+        description: "Amended constitution establishing new Constitutional Court and revised Bill of Rights provisions"
+      },
+      {
+        title: "Companies Act",
+        citation: "No. 10 of 2017",
+        description: "Governs company formation, management, and dissolution; modernized corporate law framework"
+      },
+      {
+        title: "Lands Act",
+        citation: "Chapter 184 of the Laws of Zambia",
+        description: "Regulates land tenure, acquisition, and administration; recognizes both customary and state land"
+      },
+      {
+        title: "Penal Code",
+        citation: "Chapter 87 of the Laws of Zambia",
+        description: "Codifies criminal offenses and punishments in the Zambian legal system"
+      },
+      {
+        title: "Industrial and Labour Relations Act",
+        citation: "Chapter 269 of the Laws of Zambia",
+        description: "Regulates labor relations, trade unions, and collective bargaining in employment"
+      }
+    ],
+    analysis: "Zambian law represents a unique blend of English common law, constitutional principles, and customary law. The legal system continues to evolve, with significant reforms following the 2016 constitutional amendments. The judiciary maintains a hierarchical structure with the Constitutional Court and Supreme Court as final arbiters on constitutional and general legal matters respectively. Recent developments show increasing emphasis on human rights protections, economic regulation, and harmonization of customary practices with constitutional standards."
   }
 };
 
@@ -353,7 +422,8 @@ serve(async (req) => {
         contract: ['contract', 'agreement', 'breach', 'terms', 'clause', 'offer', 'acceptance', 'consideration', 'performance', 'damages', 'warranty', 'promissory', 'bargain', 'exchange'],
         tort: ['injury', 'negligence', 'liability', 'damages', 'tort', 'duty', 'harm', 'causation', 'defamation', 'nuisance', 'trespass', 'malpractice', 'battery', 'assault'],
         constitutional: ['constitution', 'amendment', 'rights', 'freedom', 'equal protection', 'due process', 'judicial review', 'commerce clause', 'speech', 'religion', 'privacy', 'liberty'],
-        criminal: ['crime', 'arrest', 'prosecution', 'guilty', 'innocent', 'evidence', 'search', 'seizure', 'miranda', 'felony', 'misdemeanor', 'punishment', 'incarceration', 'defendant']
+        criminal: ['crime', 'arrest', 'prosecution', 'guilty', 'innocent', 'evidence', 'search', 'seizure', 'miranda', 'felony', 'misdemeanor', 'punishment', 'incarceration', 'defendant'],
+        zambian: ['zambia', 'zambian', 'lusaka', 'ndola', 'customary law', 'traditional', 'chieftaincy', 'african law', 'southern africa', 'common law', 'english law', 'constitution of zambia', 'supreme court of zambia', 'high court']
       };
       
       // Count keyword matches for each domain with weighted scoring
@@ -396,7 +466,9 @@ serve(async (req) => {
       
       // If no specific matches, return the two fundamental areas
       if (maxMatches === 0) {
-        if (searchQuery.toLowerCase().includes('common law')) {
+        if (searchQuery.toLowerCase().includes('zambia') || searchQuery.toLowerCase().includes('zambian')) {
+          return ['zambian', 'constitutional'];
+        } else if (searchQuery.toLowerCase().includes('common law')) {
           return ['property', 'tort'];
         } else if (searchQuery.toLowerCase().includes('contract law')) {
           return ['contract', 'commercial'];

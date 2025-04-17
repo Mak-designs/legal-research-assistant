@@ -5,9 +5,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
-import { Loader2, Search, BookOpen, Scale, Book } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  BookOpen,
+  Scale,
+  Book,
+  Globe
+} from "lucide-react";
 import ComparisonResults from "@/components/comparison/ComparisonResults";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ComparisonToolProps {
   initialQuery?: string | null;
@@ -17,6 +31,7 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
   const [query, setQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [results, setResults] = useState<any | null>(null);
+  const [jurisdiction, setJurisdiction] = useState<string>("general");
 
   useEffect(() => {
     if (initialQuery) {
@@ -38,8 +53,11 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Include jurisdiction in the request
       const { data, error } = await supabase.functions.invoke('legal-search', {
-        body: { query: query }
+        body: { 
+          query: jurisdiction === "zambian" ? `Zambian law: ${query}` : query
+        }
       });
       
       if (error) throw error;
@@ -47,7 +65,7 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
       if (session?.user) {
         try {
           await supabase.from('search_history').insert({
-            query: query,
+            query: `${jurisdiction === "zambian" ? "[Zambian] " : ""}${query}`,
             user_id: session.user.id,
             results_count: data.comparison.commonLaw.caseExamples.length + 
                           data.comparison.contractLaw.caseExamples.length
@@ -86,20 +104,51 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
               />
             </div>
             
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isLoading || !query.trim()}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Analyze
-                  </>
-                )}
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+              <div className="w-full sm:w-1/3">
+                <label htmlFor="jurisdiction" className="text-sm font-medium mb-2 block">
+                  Jurisdiction
+                </label>
+                <Select 
+                  value={jurisdiction} 
+                  onValueChange={setJurisdiction} 
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-full" id="jurisdiction">
+                    <SelectValue placeholder="Select jurisdiction" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">
+                      <div className="flex items-center">
+                        <Globe className="mr-2 h-4 w-4" />
+                        General
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="zambian">
+                      <div className="flex items-center">
+                        <Globe className="mr-2 h-4 w-4" />
+                        Zambian
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end items-end">
+                <Button type="submit" disabled={isLoading || !query.trim()}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      Analyze
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>
@@ -110,6 +159,11 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
           <h2 className="text-2xl font-semibold mb-4 flex items-center">
             <Scale className="mr-2 h-5 w-5 text-accent" />
             Legal Comparison Results
+            {jurisdiction === "zambian" && (
+              <span className="ml-2 text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
+                Zambian Jurisdiction
+              </span>
+            )}
           </h2>
           
           <Tabs defaultValue="comparison">

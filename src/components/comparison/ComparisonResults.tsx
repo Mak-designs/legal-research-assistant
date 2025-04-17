@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, FileText, Info, Scale, Book } from "lucide-react";
+import { BookOpen, FileText, Info, Scale, Book, Globe } from "lucide-react";
 
 interface ComparisonResultsProps {
   results: any;
@@ -13,14 +13,19 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
   if (!results) return null;
 
   const { commonLaw, contractLaw } = results.comparison;
+  const isZambianQuery = results.query.toLowerCase().includes("zambian law:");
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="border-l-4 border-l-primary">
         <CardHeader className="pb-2">
           <CardTitle className="text-xl flex items-center">
-            <Scale className="mr-2 h-5 w-5" />
-            Common Law
+            {isZambianQuery ? (
+              <Globe className="mr-2 h-5 w-5" />
+            ) : (
+              <Scale className="mr-2 h-5 w-5" />
+            )}
+            {isZambianQuery ? "Zambian Law" : "Common Law"}
             <Badge className="ml-2" variant="outline">
               {commonLaw.relevance.split(" ")[0]}
             </Badge>
@@ -89,7 +94,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
         <CardHeader className="pb-2">
           <CardTitle className="text-xl flex items-center">
             <FileText className="mr-2 h-5 w-5" />
-            Contract Law
+            {isZambianQuery ? "Related Law" : "Contract Law"}
             <Badge className="ml-2" variant="outline">
               {contractLaw.relevance.split(" ")[0]}
             </Badge>
@@ -160,6 +165,13 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
         </CardHeader>
         <CardContent>
           <p>{results.recommendation}</p>
+          {isZambianQuery && (
+            <div className="mt-4 text-sm">
+              <p className="text-muted-foreground">
+                Source: Data compiled from <a href="https://zambialii.org/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Zambia Legal Information Institute (ZambiaLII)</a> and Zambian legal publications.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

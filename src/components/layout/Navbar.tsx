@@ -7,7 +7,20 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Scale, Menu, Home, Search, LogIn, LogOut, BookOpen, Info, FileText, Shield } from "lucide-react";
+import { 
+  Scale, 
+  Menu, 
+  Home, 
+  Search, 
+  LogIn, 
+  LogOut, 
+  BookOpen, 
+  Info, 
+  FileText, 
+  Shield,
+  Globe 
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -70,6 +83,10 @@ const Navbar: React.FC<NavbarProps> = ({
             <Scale className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">LegalAssist</span>
           </Link>
+          <Badge variant="outline" className="ml-2 hidden sm:flex">
+            <Globe className="h-3 w-3 mr-1" />
+            Zambian Jurisdiction Available
+          </Badge>
         </div>
 
         {/* Desktop navigation */}
@@ -124,6 +141,13 @@ const Navbar: React.FC<NavbarProps> = ({
                     {item.name}
                   </Link>
                 ))}
+              
+              <div className="py-2">
+                <Badge variant="outline" className="flex items-center">
+                  <Globe className="h-3 w-3 mr-1" />
+                  Zambian Jurisdiction Available
+                </Badge>
+              </div>
               
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleLogout} className="mt-4">
