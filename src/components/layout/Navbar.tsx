@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -18,9 +18,7 @@ import {
   Info, 
   FileText, 
   Shield,
-  Globe 
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -32,6 +30,10 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  
+  // Check if current route is about, privacy, or terms
+  const isInfoPage = ['/about', '/privacy', '/terms'].includes(location.pathname);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -83,10 +85,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <Scale className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">LegalAssist</span>
           </Link>
-          <Badge variant="outline" className="ml-2 hidden sm:flex">
-            <Globe className="h-3 w-3 mr-1" />
-            Zambian Jurisdiction Available
-          </Badge>
+          {/* Zambian Jurisdiction Badge removed */}
         </div>
 
         {/* Desktop navigation */}
@@ -109,12 +108,14 @@ const Navbar: React.FC<NavbarProps> = ({
               Logout
             </Button>
           ) : (
-            <Button asChild>
-              <Link to="/login">
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In
-              </Link>
-            </Button>
+            !isInfoPage && (
+              <Button asChild>
+                <Link to="/login">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Link>
+              </Button>
+            )
           )}
         </nav>
 
@@ -142,12 +143,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   </Link>
                 ))}
               
-              <div className="py-2">
-                <Badge variant="outline" className="flex items-center">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Zambian Jurisdiction Available
-                </Badge>
-              </div>
+              {/* Zambian Jurisdiction Badge removed from mobile menu */}
               
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleLogout} className="mt-4">
@@ -155,12 +151,14 @@ const Navbar: React.FC<NavbarProps> = ({
                   Logout
                 </Button>
               ) : (
-                <Button asChild className="mt-4">
-                  <Link to="/login" onClick={() => setIsOpen(false)}>
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Sign In
-                  </Link>
-                </Button>
+                !isInfoPage && (
+                  <Button asChild className="mt-4">
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign In
+                    </Link>
+                  </Button>
+                )
               )}
             </div>
           </SheetContent>
