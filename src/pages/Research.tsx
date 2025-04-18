@@ -172,7 +172,7 @@ const Research = () => {
       <footer className="border-t bg-muted/50">
         <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
           <p className="text-center text-sm text-muted-foreground">
-            © 2025 LegalAssist. All rights reserved.
+            @Mak_Designs
           </p>
           <p className="text-center text-sm text-muted-foreground">
             For educational purposes only. Not legal advice.

@@ -1,3 +1,4 @@
+
 import React from "react";
 import Navbar from "@/components/layout/Navbar";
 import { FileText, BookOpen, ShieldCheck, AlertTriangle } from "lucide-react";
@@ -144,7 +145,7 @@ const Terms = () => {
       <footer className="border-t bg-muted/50">
         <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
           <p className="text-center text-sm text-muted-foreground">
-            © 2025 LegalAssist. All rights reserved.
+            @Mak_Designs
           </p>
           <nav className="flex gap-4 text-sm text-muted-foreground">
             <a href="/about" className="hover:underline underline-offset-4">
