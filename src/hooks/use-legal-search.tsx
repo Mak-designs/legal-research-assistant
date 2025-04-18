@@ -22,7 +22,6 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Include jurisdiction in the request
       const { data, error } = await supabase.functions.invoke('legal-search', {
         body: { 
           query: jurisdiction === "zambian" ? `Zambian law: ${query}` : query
@@ -31,6 +30,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       
       if (error) throw error;
       
+      // Always save the search in history when successful
       if (session?.user) {
         try {
           await supabase.from('search_history').insert({
