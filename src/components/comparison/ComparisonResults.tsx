@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Trash2, FileDigit, Globe } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,6 +60,13 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
 
   if (!results) return null;
 
+  // Check if this is a Zambian law query
+  const isZambianLaw = results.query.toLowerCase().includes('zambian') || 
+                       results.query.toLowerCase().includes('zambia');
+                      
+  // Check if this is a digital evidence/cybersecurity query
+  const isDigitalEvidence = results.technicalDetails !== undefined;
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
@@ -86,6 +93,22 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
             </Button>
           </div>
         </div>
+        
+        {/* Jurisdiction and context badges */}
+        <div className="flex flex-wrap gap-2">
+          {isZambianLaw && (
+            <div className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+              <Globe className="h-3 w-3 mr-1" />
+              Zambian Law Context
+            </div>
+          )}
+          {isDigitalEvidence && (
+            <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+              <FileDigit className="h-3 w-3 mr-1" />
+              Digital Evidence Analysis
+            </div>
+          )}
+        </div>
 
         <div className="space-y-4">
           <div>
@@ -97,6 +120,20 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
             <h4 className="font-medium mb-2">Contract Law</h4>
             <p className="text-muted-foreground">{results.comparison.contractLaw.analysis}</p>
           </div>
+          
+          {isDigitalEvidence && (
+            <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
+              <h4 className="font-medium mb-2 flex items-center">
+                <FileDigit className="h-4 w-4 mr-1 text-green-600" />
+                Digital Evidence Technical Analysis
+              </h4>
+              <p className="text-sm">
+                This analysis includes technical verification details for digital evidence. 
+                View the "Detailed Analysis" tab for hash verification methods, chain of custody requirements, 
+                and integrity verification techniques that meet Zambian legal standards.
+              </p>
+            </div>
+          )}
           
           <div>
             <h4 className="font-medium mb-2">Recommendation</h4>

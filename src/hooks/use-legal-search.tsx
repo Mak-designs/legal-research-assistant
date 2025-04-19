@@ -22,9 +22,22 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Enhance the query with jurisdiction context
+      let enhancedQuery = query;
+      if (jurisdiction === "zambian") {
+        enhancedQuery = `Zambian law: ${query}`;
+        
+        // Add specific keywords for digital evidence if relevant
+        if (query.toLowerCase().includes('evidence') || 
+            query.toLowerCase().includes('digital') || 
+            query.toLowerCase().includes('electronic')) {
+          enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
+        }
+      }
+      
       const { data, error } = await supabase.functions.invoke('legal-search', {
         body: { 
-          query: jurisdiction === "zambian" ? `Zambian law: ${query}` : query
+          query: enhancedQuery
         }
       });
       
