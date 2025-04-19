@@ -1,12 +1,17 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, Search, FileText, Scale, Loader2, ExternalLink, GraduationCap, Save, Trash } from "lucide-react";
+import { BookOpen, Search, FileText, Scale, Loader2, ExternalLink, GraduationCap, Save, Trash, FileDigit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type SavedCase = {
@@ -27,6 +32,7 @@ type SavedCase = {
   decision_date: string | null;
   case_id: string;
   citation: string | null;
+  notes: string | null;
 };
 
 type CaseToDelete = SavedCase | null;
@@ -38,26 +44,24 @@ const Library = () => {
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [caseToDelete, setCaseToDelete] = useState<CaseToDelete>(null);
+  const [selectedCase, setSelectedCase] = useState<SavedCase | null>(null);
+  const [showCaseDialog, setShowCaseDialog] = useState<boolean>(false);
   
   useEffect(() => {
-    // Check if user is authenticated via Supabase
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          // User is not authenticated, redirect to login
           setIsAuthenticated(false);
           navigate("/login");
           toast.error("Please sign in to access the legal library");
           return;
         }
         
-        // User is authenticated
         setIsAuthenticated(true);
         
-        // Fetch user's saved cases
         const { data: casesData, error: casesError } = await supabase
           .from('saved_cases')
           .select('*')
@@ -76,7 +80,6 @@ const Library = () => {
     
     checkAuth();
     
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_OUT') {
@@ -129,7 +132,6 @@ const Library = () => {
 
   const handleSaveCase = async () => {
     try {
-      // Get the current user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -143,7 +145,7 @@ const Library = () => {
         court_name: "Supreme Court",
         decision_date: new Date().toISOString().split('T')[0],
         citation: "123 U.S. 456 (2025)",
-        user_id: user.id  // Add the user_id field to associate the case with the current user
+        user_id: user.id
       };
       
       const { data, error } = await supabase
@@ -161,6 +163,11 @@ const Library = () => {
       console.error("Error saving case:", error);
       toast.error("Failed to save case to your library");
     }
+  };
+
+  const handleViewCase = (caseItem: SavedCase) => {
+    setSelectedCase(caseItem);
+    setShowCaseDialog(true);
   };
 
   if (isLoading) {
@@ -219,7 +226,6 @@ const Library = () => {
           </div>
           
           <div className="grid grid-cols-1 gap-6">
-            {/* Saved Cases Section */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center">
@@ -243,21 +249,36 @@ const Library = () => {
                         <TableHead>Case</TableHead>
                         <TableHead>Court</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead className="w-[80px]">Actions</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="w-[120px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {savedCases.map((caseItem) => (
-                        <TableRow key={caseItem.id}>
+                        <TableRow key={caseItem.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewCase(caseItem)}>
                           <TableCell className="font-medium">{caseItem.title}</TableCell>
                           <TableCell>{caseItem.court_name}</TableCell>
                           <TableCell>{caseItem.decision_date && new Date(caseItem.decision_date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {caseItem.notes?.includes('technicalDetails') ? (
+                              <div className="flex items-center text-green-600">
+                                <FileDigit className="h-4 w-4 mr-1" />
+                                Digital
+                              </div>
+                            ) : (
+                              <div className="flex items-center">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Standard
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Button 
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setCaseToDelete(caseItem);
                                 setShowDeleteDialog(true);
                               }}
@@ -280,7 +301,7 @@ const Library = () => {
       <footer className="border-t bg-muted/50">
         <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
           <p className="text-center text-sm text-muted-foreground">
-            © 2025 LegalAssist. All rights reserved.
+            @Mak_Designs
           </p>
           <p className="text-center text-sm text-muted-foreground">
             For educational purposes only. Not legal advice.
@@ -304,6 +325,97 @@ const Library = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedCase?.title}</DialogTitle>
+            <DialogDescription>
+              {selectedCase?.citation && (
+                <p className="mt-2">Citation: {selectedCase.citation}</p>
+              )}
+              {selectedCase?.court_name && (
+                <p>Court: {selectedCase.court_name}</p>
+              )}
+              {selectedCase?.decision_date && (
+                <p>Date: {new Date(selectedCase.decision_date).toLocaleDateString()}</p>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
+            {selectedCase?.notes && (
+              <div className="space-y-4">
+                {(() => {
+                  try {
+                    const parsedNotes = JSON.parse(selectedCase.notes);
+                    if (parsedNotes.technicalDetails) {
+                      return (
+                        <div className="space-y-4 border p-4 rounded-md bg-slate-50">
+                          <h3 className="text-xl font-semibold flex items-center">
+                            <FileDigit className="mr-2 h-5 w-5 text-green-600" />
+                            Digital Evidence Technical Details
+                          </h3>
+                          
+                          {parsedNotes.technicalDetails.hashingTechniques && (
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">Hashing Techniques</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {parsedNotes.technicalDetails.hashingTechniques.map((technique: any, index: number) => (
+                                  <div key={index} className="border p-2 rounded bg-white">
+                                    <p className="font-medium">{technique.algorithm}</p>
+                                    <p className="text-sm text-muted-foreground">{technique.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {parsedNotes.technicalDetails.chainOfCustody && (
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">Chain of Custody</h4>
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse">
+                                  <thead>
+                                    <tr className="bg-muted">
+                                      <th className="border px-4 py-2 text-left">Step</th>
+                                      <th className="border px-4 py-2 text-left">Requirements</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {parsedNotes.technicalDetails.chainOfCustody.map((step: any, index: number) => (
+                                      <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                                        <td className="border px-4 py-2">{step.step}</td>
+                                        <td className="border px-4 py-2">{step.requirements}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {parsedNotes.technicalDetails.integrityVerification && (
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">Integrity Verification Example</h4>
+                              <div className="bg-black text-white p-3 rounded-md overflow-x-auto font-mono text-sm">
+                                {parsedNotes.technicalDetails.integrityVerification}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    // If notes is not JSON, display as plain text
+                  }
+                  return <p className="text-muted-foreground whitespace-pre-wrap">{selectedCase.notes}</p>;
+                })()}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
