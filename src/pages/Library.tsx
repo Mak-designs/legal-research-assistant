@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,7 +35,6 @@ const Library = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchHistory, setSearchHistory] = useState<any[]>([]);
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [caseToDelete, setCaseToDelete] = useState<CaseToDelete>(null);
@@ -58,16 +56,6 @@ const Library = () => {
         
         // User is authenticated
         setIsAuthenticated(true);
-        
-        // Fetch user's search history
-        const { data: historyData, error: historyError } = await supabase
-          .from('search_history')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        
-        if (historyError) throw historyError;
-        setSearchHistory(historyData || []);
         
         // Fetch user's saved cases
         const { data: casesData, error: casesError } = await supabase
@@ -117,10 +105,6 @@ const Library = () => {
     }
   };
   
-  const handleRepeatSearch = (query: string) => {
-    navigate("/research", { state: { initialQuery: query } });
-  };
-
   const handleDeleteCase = async () => {
     if (!caseToDelete) return;
     
@@ -144,14 +128,22 @@ const Library = () => {
   };
 
   const handleSaveCase = async () => {
-    // This functionality simulates adding a test case since we don't have a real case search yet
     try {
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to save cases");
+        return;
+      }
+      
       const newCase = {
         case_id: `case-${Math.floor(Math.random() * 1000)}`,
         title: `Test Case ${Math.floor(Math.random() * 100)}`,
         court_name: "Supreme Court",
         decision_date: new Date().toISOString().split('T')[0],
-        citation: "123 U.S. 456 (2025)"
+        citation: "123 U.S. 456 (2025)",
+        user_id: user.id  // Add the user_id field to associate the case with the current user
       };
       
       const { data, error } = await supabase
@@ -216,50 +208,17 @@ const Library = () => {
                   Court Listener
                 </a>
               </Button>
+              
+              <Button variant="outline" size="sm" asChild>
+                <a href="https://zambialii.org/" target="_blank" rel="noreferrer" className="flex items-center">
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Zambian Law
+                </a>
+              </Button>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Searches Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Search className="h-5 w-5 mr-2 text-primary" />
-                  Recent Searches
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {searchHistory.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-6">
-                    You haven't performed any searches yet.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {searchHistory.map((item) => (
-                      <div key={item.id} className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <p className="font-medium">{item.query}</p>
-                          <Badge>{item.results_count} results</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(item.created_at).toLocaleString()}
-                        </p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => handleRepeatSearch(item.query)}
-                        >
-                          <Search className="h-3 w-3 mr-1" />
-                          Search Again
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
+          <div className="grid grid-cols-1 gap-6">
             {/* Saved Cases Section */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
