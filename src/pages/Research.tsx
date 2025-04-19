@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { Scale, Loader2, BookOpen, Search } from "lucide-react";
+import { Scale, Loader2, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -15,7 +15,6 @@ const Research = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initialQuery, setInitialQuery] = useState<string | null>(null);
-  const [recentSearches, setRecentSearches] = useState<any[]>([]);
   
   useEffect(() => {
     if (location.state && location.state.initialQuery) {
@@ -35,21 +34,6 @@ const Research = () => {
         }
         
         setIsAuthenticated(true);
-        
-        // Fetch recent searches
-        const { data: searches, error } = await supabase
-          .from('search_history')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        if (error) {
-          console.error("Failed to fetch recent searches:", error);
-        } else {
-          setRecentSearches(searches || []);
-        }
-        
       } catch (error) {
         console.error("Authentication check failed:", error);
         navigate("/login");
@@ -89,12 +73,6 @@ const Research = () => {
     }
   };
 
-  const handleSearchClick = (query: string) => {
-    setInitialQuery(query);
-    // This will trigger the useEffect in ComparisonTool
-    setTimeout(() => setInitialQuery(null), 100);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -129,43 +107,11 @@ const Research = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
-              <CardContent className="pt-6">
-                <ComparisonTool initialQuery={initialQuery} />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-medium flex items-center mb-3">
-                  <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                  Recent Searches
-                </h3>
-                
-                {recentSearches.length > 0 ? (
-                  <ul className="space-y-2">
-                    {recentSearches.map((search) => (
-                      <li key={search.id} className="text-sm">
-                        <Button 
-                          variant="ghost" 
-                          className="h-auto py-1 px-2 w-full justify-start text-left font-normal"
-                          onClick={() => handleSearchClick(search.query)}
-                        >
-                          <Search className="h-3 w-3 mr-2 text-muted-foreground" />
-                          <span className="truncate">{search.query}</span>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Your recent search history will appear here
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <ComparisonTool initialQuery={initialQuery} />
+            </CardContent>
+          </Card>
         </div>
       </main>
       

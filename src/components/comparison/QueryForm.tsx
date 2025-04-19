@@ -29,20 +29,33 @@ const QueryForm: React.FC<QueryFormProps> = ({
   isLoading,
   onSubmit
 }) => {
-  // Provide some example queries
+  // Provide example queries
   const exampleQueries = {
     general: [
       "What are the differences between common law and contract law regarding property rights?",
-      "Explain the doctrine of adverse possession and relevant case law"
+      "Explain the doctrine of adverse possession and relevant case law",
+      "How do courts interpret force majeure clauses in contracts?",
+      "What are the key elements of a valid contract?",
+      "Explain the principle of estoppel in common law"
     ],
     zambian: [
       "How does Zambian law handle digital evidence in court proceedings?",
       "What are the key provisions of the Cyber Security and Cyber Crimes Act of 2021?",
-      "Explain the requirements for digital evidence chain of custody under Zambian law"
+      "Explain the requirements for digital evidence chain of custody under Zambian law",
+      "What are the legal standards for electronic signatures in Zambia?",
+      "How does the Zambian Evidence Act handle digital forensics?"
     ]
   };
 
-  const handleExampleClick = (example: string) => {
+  // Get a random example query based on jurisdiction
+  const getRandomExample = () => {
+    const queries = exampleQueries[jurisdiction];
+    const randomIndex = Math.floor(Math.random() * queries.length);
+    return queries[randomIndex];
+  };
+
+  const handleExampleClick = () => {
+    const example = getRandomExample();
     setQuery(example);
   };
 
@@ -71,7 +84,10 @@ const QueryForm: React.FC<QueryFormProps> = ({
           </label>
           <Select 
             value={jurisdiction} 
-            onValueChange={setJurisdiction} 
+            onValueChange={(value) => {
+              setJurisdiction(value);
+              setQuery(''); // Clear query when jurisdiction changes
+            }} 
             disabled={isLoading}
           >
             <SelectTrigger className="w-full" id="jurisdiction">
@@ -111,45 +127,21 @@ const QueryForm: React.FC<QueryFormProps> = ({
         </div>
       </div>
       
-      {/* Example queries */}
+      {/* Example query button */}
       <div className="mt-4">
         <h3 className="text-sm font-medium mb-2 flex items-center">
           <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
-          Example Queries
+          Try an Example Query
         </h3>
-        <div className="flex flex-wrap gap-2">
-          {jurisdiction === "zambian" ? (
-            <>
-              {exampleQueries.zambian.map((example, index) => (
-                <Button 
-                  key={index} 
-                  variant="outline" 
-                  size="sm" 
-                  type="button"
-                  onClick={() => handleExampleClick(example)}
-                  className="text-xs"
-                >
-                  {example}
-                </Button>
-              ))}
-            </>
-          ) : (
-            <>
-              {exampleQueries.general.map((example, index) => (
-                <Button 
-                  key={index} 
-                  variant="outline" 
-                  size="sm" 
-                  type="button"
-                  onClick={() => handleExampleClick(example)}
-                  className="text-xs"
-                >
-                  {example}
-                </Button>
-              ))}
-            </>
-          )}
-        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          type="button"
+          onClick={handleExampleClick}
+          className="text-xs"
+        >
+          {getRandomExample()}
+        </Button>
       </div>
       
       {jurisdiction === "zambian" && (
