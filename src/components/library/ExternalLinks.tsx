@@ -1,13 +1,9 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ExternalLink, GraduationCap, FileText } from "lucide-react";
-import { RecommendationsTables } from './RecommendationsTables';
-import { Separator } from "@/components/ui/separator";
+import { ExternalLink, GraduationCap } from "lucide-react";
 
 export const ExternalLinks = () => {
-  const [showRecommendations, setShowRecommendations] = React.useState(false);
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
@@ -31,19 +27,7 @@ export const ExternalLinks = () => {
             Zambian Law
           </a>
         </Button>
-        
-        <Button variant="outline" size="sm" onClick={() => setShowRecommendations(!showRecommendations)} className="flex items-center">
-          <FileText className="h-4 w-4 mr-1" />
-          {showRecommendations ? "Hide Recommendations" : "Show Recommendations"}
-        </Button>
       </div>
-      
-      {showRecommendations && (
-        <>
-          <Separator className="my-4" />
-          <RecommendationsTables />
-        </>
-      )}
     </div>
   );
 };
