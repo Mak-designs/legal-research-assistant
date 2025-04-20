@@ -1,41 +1,17 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { BookOpen, Search, FileText, Scale, Loader2, ExternalLink, GraduationCap, Save, Trash, FileDigit } from "lucide-react";
+import { BookOpen, Search, FileText, Loader2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-type SavedCase = {
-  id: string;
-  title: string;
-  court_name: string | null;
-  decision_date: string | null;
-  case_id: string;
-  citation: string | null;
-  notes: string | null;
-};
-
-type CaseToDelete = SavedCase | null;
+import { SavedCasesTable } from "@/components/library/SavedCasesTable";
+import { CaseDialog } from "@/components/library/CaseDialog";
+import { DeleteCaseDialog } from "@/components/library/DeleteCaseDialog";
+import { ExternalLinks } from "@/components/library/ExternalLinks";
+import type { SavedCase } from "@/components/library/types";
 
 const Library = () => {
   const navigate = useNavigate();
@@ -43,7 +19,7 @@ const Library = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [caseToDelete, setCaseToDelete] = useState<CaseToDelete>(null);
+  const [caseToDelete, setCaseToDelete] = useState<SavedCase | null>(null);
   const [selectedCase, setSelectedCase] = useState<SavedCase | null>(null);
   const [showCaseDialog, setShowCaseDialog] = useState<boolean>(false);
   
@@ -165,11 +141,6 @@ const Library = () => {
     }
   };
 
-  const handleViewCase = (caseItem: SavedCase) => {
-    setSelectedCase(caseItem);
-    setShowCaseDialog(true);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -202,26 +173,7 @@ const Library = () => {
                 New Research
               </Button>
               
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://www.law.cornell.edu/" target="_blank" rel="noreferrer" className="flex items-center">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Cornell Law
-                </a>
-              </Button>
-              
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://www.courtlistener.com/" target="_blank" rel="noreferrer" className="flex items-center">
-                  <GraduationCap className="h-4 w-4 mr-1" />
-                  Court Listener
-                </a>
-              </Button>
-              
-              <Button variant="outline" size="sm" asChild>
-                <a href="https://zambialii.org/" target="_blank" rel="noreferrer" className="flex items-center">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Zambian Law
-                </a>
-              </Button>
+              <ExternalLinks />
             </div>
           </div>
           
@@ -243,54 +195,17 @@ const Library = () => {
                     You haven't saved any cases yet.
                   </p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Case</TableHead>
-                        <TableHead>Court</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="w-[120px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {savedCases.map((caseItem) => (
-                        <TableRow key={caseItem.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewCase(caseItem)}>
-                          <TableCell className="font-medium">{caseItem.title}</TableCell>
-                          <TableCell>{caseItem.court_name}</TableCell>
-                          <TableCell>{caseItem.decision_date && new Date(caseItem.decision_date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            {caseItem.notes?.includes('technicalDetails') ? (
-                              <div className="flex items-center text-green-600">
-                                <FileDigit className="h-4 w-4 mr-1" />
-                                Digital
-                              </div>
-                            ) : (
-                              <div className="flex items-center">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Standard
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCaseToDelete(caseItem);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              <Trash className="h-4 w-4" />
-                              <span className="sr-only">Delete case</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <SavedCasesTable 
+                    savedCases={savedCases}
+                    onViewCase={(caseItem) => {
+                      setSelectedCase(caseItem);
+                      setShowCaseDialog(true);
+                    }}
+                    onDeleteCase={(caseItem) => {
+                      setCaseToDelete(caseItem);
+                      setShowDeleteDialog(true);
+                    }}
+                  />
                 )}
               </CardContent>
             </Card>
@@ -309,115 +224,21 @@ const Library = () => {
         </div>
       </footer>
       
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Case</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{caseToDelete?.title}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCase} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteCaseDialog 
+        caseToDelete={caseToDelete}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirmDelete={handleDeleteCase}
+      />
 
-      <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedCase?.title}</DialogTitle>
-            <DialogDescription>
-              {selectedCase?.citation && (
-                <p className="mt-2">Citation: {selectedCase.citation}</p>
-              )}
-              {selectedCase?.court_name && (
-                <p>Court: {selectedCase.court_name}</p>
-              )}
-              {selectedCase?.decision_date && (
-                <p>Date: {new Date(selectedCase.decision_date).toLocaleDateString()}</p>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="mt-4 space-y-4">
-            {selectedCase?.notes && (
-              <div className="space-y-4">
-                {(() => {
-                  try {
-                    const parsedNotes = JSON.parse(selectedCase.notes);
-                    if (parsedNotes.technicalDetails) {
-                      return (
-                        <div className="space-y-4 border p-4 rounded-md bg-slate-50">
-                          <h3 className="text-xl font-semibold flex items-center">
-                            <FileDigit className="mr-2 h-5 w-5 text-green-600" />
-                            Digital Evidence Technical Details
-                          </h3>
-                          
-                          {parsedNotes.technicalDetails.hashingTechniques && (
-                            <div className="space-y-2">
-                              <h4 className="text-lg font-medium">Hashing Techniques</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {parsedNotes.technicalDetails.hashingTechniques.map((technique: any, index: number) => (
-                                  <div key={index} className="border p-2 rounded bg-white">
-                                    <p className="font-medium">{technique.algorithm}</p>
-                                    <p className="text-sm text-muted-foreground">{technique.description}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {parsedNotes.technicalDetails.chainOfCustody && (
-                            <div className="space-y-2">
-                              <h4 className="text-lg font-medium">Chain of Custody</h4>
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full border-collapse">
-                                  <thead>
-                                    <tr className="bg-muted">
-                                      <th className="border px-4 py-2 text-left">Step</th>
-                                      <th className="border px-4 py-2 text-left">Requirements</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {parsedNotes.technicalDetails.chainOfCustody.map((step: any, index: number) => (
-                                      <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                                        <td className="border px-4 py-2">{step.step}</td>
-                                        <td className="border px-4 py-2">{step.requirements}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {parsedNotes.technicalDetails.integrityVerification && (
-                            <div className="space-y-2">
-                              <h4 className="text-lg font-medium">Integrity Verification Example</h4>
-                              <div className="bg-black text-white p-3 rounded-md overflow-x-auto font-mono text-sm">
-                                {parsedNotes.technicalDetails.integrityVerification}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                  } catch (e) {
-                    // If notes is not JSON, display as plain text
-                  }
-                  return <p className="text-muted-foreground whitespace-pre-wrap">{selectedCase.notes}</p>;
-                })()}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CaseDialog 
+        selectedCase={selectedCase}
+        open={showCaseDialog}
+        onOpenChange={setShowCaseDialog}
+      />
     </div>
   );
 };
 
 export default Library;
+
