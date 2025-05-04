@@ -2,8 +2,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DocumentUpload } from "@/components/library/DocumentUpload";
 import { DocumentVerification } from "@/components/library/DocumentVerification";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -59,24 +57,15 @@ const DocumentManager = () => {
       <main className="flex-1 container py-8">
         <div className="flex flex-col space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">Document Integrity Manager</h1>
+            <h1 className="text-3xl font-bold">Document Verification</h1>
             <p className="text-muted-foreground mt-1">
-              Upload, verify, and manage legal documents with cryptographic integrity
+              Verify and validate the integrity of legal documents with cryptographic fingerprinting
             </p>
           </div>
           
-          <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">Document Upload</TabsTrigger>
-              <TabsTrigger value="verify">Document Verification</TabsTrigger>
-            </TabsList>
-            <TabsContent value="upload">
-              <DocumentUpload />
-            </TabsContent>
-            <TabsContent value="verify">
-              <DocumentVerification />
-            </TabsContent>
-          </Tabs>
+          <div className="w-full">
+            <DocumentVerification />
+          </div>
         </div>
       </main>
       
