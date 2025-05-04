@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, GraduationCap } from "lucide-react";
+import { ExternalLink, GraduationCap, FileDigit } from "lucide-react";
 
 export const ExternalLinks = () => {
   return (
@@ -26,6 +27,13 @@ export const ExternalLinks = () => {
             <ExternalLink className="h-4 w-4 mr-1" />
             Zambian Law
           </a>
+        </Button>
+        
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/documents" className="flex items-center">
+            <FileDigit className="h-4 w-4 mr-1" />
+            Document Manager
+          </Link>
         </Button>
       </div>
     </div>

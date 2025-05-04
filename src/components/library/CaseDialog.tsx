@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileDigit } from "lucide-react";
+import { FileDigit, Shield, ShieldCheck, ShieldX } from "lucide-react";
 import type { SavedCase } from './types';
 
 interface CaseDialogProps {
@@ -16,7 +16,33 @@ interface CaseDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const CaseDialog = ({ selectedCase, open, onOpenChange }: CaseDialogProps) => {
+export const CaseDialog = ({ selectedCase, onOpenChange, open }: CaseDialogProps) => {
+  const renderIntegrityStatus = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return (
+          <div className="flex items-center text-green-600 mt-2">
+            <ShieldCheck className="mr-2 h-5 w-5" />
+            <span>Document integrity verified (matches version from {new Date().toLocaleDateString()})</span>
+          </div>
+        );
+      case 'modified':
+        return (
+          <div className="flex items-center text-red-600 mt-2">
+            <ShieldX className="mr-2 h-5 w-5" />
+            <span>Document may be altered! Hash does not match stored version</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center text-muted-foreground mt-2">
+            <Shield className="mr-2 h-5 w-5" />
+            <span>Document integrity unknown</span>
+          </div>
+        );
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -32,6 +58,9 @@ export const CaseDialog = ({ selectedCase, open, onOpenChange }: CaseDialogProps
             {selectedCase?.decision_date && (
               <p>Date: {new Date(selectedCase.decision_date).toLocaleDateString()}</p>
             )}
+            
+            {/* Display document integrity status */}
+            {selectedCase && renderIntegrityStatus(selectedCase.notes?.includes('verified') ? 'verified' : 'unknown')}
           </DialogDescription>
         </DialogHeader>
         
@@ -63,6 +92,18 @@ export const CaseDialog = ({ selectedCase, open, onOpenChange }: CaseDialogProps
                           </div>
                         )}
                         
+                        {/* Add Document Hash Information */}
+                        {parsedNotes.technicalDetails.documentHash && (
+                          <div className="space-y-2">
+                            <h4 className="text-lg font-medium">Document Hash</h4>
+                            <div className="border p-2 rounded bg-white">
+                              <p className="font-medium break-all">{parsedNotes.technicalDetails.documentHash.value}</p>
+                              <p className="text-sm text-muted-foreground">Algorithm: {parsedNotes.technicalDetails.documentHash.algorithm}</p>
+                              <p className="text-sm text-muted-foreground">Generated: {parsedNotes.technicalDetails.documentHash.timestamp}</p>
+                            </div>
+                          </div>
+                        )}
+                        
                         {parsedNotes.technicalDetails.chainOfCustody && (
                           <div className="space-y-2">
                             <h4 className="text-lg font-medium">Chain of Custody</h4>
@@ -83,6 +124,31 @@ export const CaseDialog = ({ selectedCase, open, onOpenChange }: CaseDialogProps
                                   ))}
                                 </tbody>
                               </table>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Add Chain of Custody History */}
+                        {parsedNotes.technicalDetails.custodyHistory && (
+                          <div className="space-y-2">
+                            <h4 className="text-lg font-medium">Document History</h4>
+                            <div className="border p-3 rounded bg-white">
+                              <ul className="space-y-2">
+                                {parsedNotes.technicalDetails.custodyHistory.map((entry: any, index: number) => (
+                                  <li key={index} className="border-b pb-2 last:border-b-0 last:pb-0">
+                                    <p className="text-sm">
+                                      <span className="font-medium">{entry.action}</span>:{' '}
+                                      <span className="text-muted-foreground">{entry.timestamp}</span> by{' '}
+                                      <span className="text-blue-600">{entry.user}</span>
+                                    </p>
+                                    {entry.hash && (
+                                      <p className="text-xs text-muted-foreground break-all mt-1">
+                                        Hash: {entry.hash}
+                                      </p>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
                           </div>
                         )}
@@ -110,4 +176,3 @@ export const CaseDialog = ({ selectedCase, open, onOpenChange }: CaseDialogProps
     </Dialog>
   );
 };
-

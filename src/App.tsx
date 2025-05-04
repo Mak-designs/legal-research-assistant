@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Research from "./pages/Research";
 import Library from "./pages/Library";
+import DocumentManager from "./pages/DocumentManager";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/research" element={<Research />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/documents" element={<DocumentManager />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
