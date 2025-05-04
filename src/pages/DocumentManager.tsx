@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import { DocumentVerification } from "@/components/library/DocumentVerification";
 import { supabase } from "@/integrations/supabase/client";
+import Footer from "@/components/layout/Footer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DocumentManager = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const isMobile = useIsMobile();
   
   React.useEffect(() => {
     const checkAuth = async () => {
@@ -54,11 +57,11 @@ const DocumentManager = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       
-      <main className="flex-1 container py-8">
-        <div className="flex flex-col space-y-6">
+      <main className="flex-1 container py-4 sm:py-8 px-4 sm:px-6">
+        <div className="flex flex-col space-y-4 sm:space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">Document Verification</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">Document Verification</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               Verify and validate the integrity of legal documents with cryptographic fingerprinting
             </p>
           </div>
@@ -69,16 +72,7 @@ const DocumentManager = () => {
         </div>
       </main>
       
-      <footer className="border-t bg-muted/50">
-        <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
-          <p className="text-center text-sm text-muted-foreground">
-            @Mak_Designs
-          </p>
-          <p className="text-center text-sm text-muted-foreground">
-            For educational purposes only. Not legal advice.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

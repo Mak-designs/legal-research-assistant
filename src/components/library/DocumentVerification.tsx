@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { ShieldCheck, ShieldX, Search } from "lucide-react";
+import { ShieldCheck, ShieldX, Search, FileDigit } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const DocumentVerification = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -14,6 +15,7 @@ export const DocumentVerification = () => {
     currentHash?: string;
     lastVerified?: string;
   }>({ status: null });
+  const isMobile = useIsMobile();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -74,49 +76,56 @@ export const DocumentVerification = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Search className="mr-2 h-5 w-5" />
+        <CardTitle className="flex items-center text-xl sm:text-2xl">
+          <FileDigit className="mr-2 h-5 w-5" />
           Document Verification
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4">
-          <div>
-            <Input
-              id="document-verification"
-              type="file"
-              onChange={handleFileChange}
-              className="mb-4"
-            />
-            {file && (
-              <p className="text-sm bg-muted p-2 rounded">
-                Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-              </p>
-            )}
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground mb-2">
+              Select a document to verify its integrity using cryptographic hashing
+            </p>
+            <div className="bg-muted/50 rounded-lg p-4 border border-dashed border-muted-foreground/50">
+              <Input
+                id="document-verification"
+                type="file"
+                onChange={handleFileChange}
+                className="mb-2"
+              />
+              {file && (
+                <p className="text-sm bg-muted p-2 rounded mt-2 break-all">
+                  Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                </p>
+              )}
+            </div>
           </div>
           
           <Button 
             onClick={verifyDocument} 
             disabled={!file}
             className="w-full"
+            size={isMobile ? "sm" : "default"}
           >
+            <Search className="mr-1 h-4 w-4" />
             Verify Document Integrity
           </Button>
         </div>
 
         {verificationResult.status && (
-          <div className={`mt-6 p-4 rounded-md border ${
+          <div className={`mt-6 p-3 sm:p-4 rounded-md border ${
             verificationResult.status === 'verified' 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
+              ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 
+              : 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
           }`}>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-3">
               {verificationResult.status === 'verified' ? (
-                <ShieldCheck className="h-8 w-8 text-green-600 mr-2" />
+                <ShieldCheck className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} text-green-600 dark:text-green-400 mr-2`} />
               ) : (
-                <ShieldX className="h-8 w-8 text-red-600 mr-2" />
+                <ShieldX className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} text-red-600 dark:text-red-400 mr-2`} />
               )}
-              <h3 className="text-lg font-medium">
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium`}>
                 {verificationResult.status === 'verified' 
                   ? 'Document integrity verified' 
                   : 'Document may be altered!'}
@@ -124,16 +133,16 @@ export const DocumentVerification = () => {
             </div>
             
             <div className="space-y-2 text-sm">
-              <p><strong>Verification time:</strong> {new Date(verificationResult.lastVerified || '').toLocaleString()}</p>
-              <div>
-                <p className="font-medium">Original hash:</p>
-                <p className="text-xs break-all font-mono bg-black bg-opacity-80 text-white p-2 rounded">
+              <p className="text-xs sm:text-sm"><strong>Verification time:</strong> {new Date(verificationResult.lastVerified || '').toLocaleString()}</p>
+              <div className="mt-3">
+                <p className="font-medium text-xs sm:text-sm">Original hash:</p>
+                <p className="text-xs break-all font-mono bg-black bg-opacity-80 text-white p-2 rounded overflow-x-auto scrollbar-thin">
                   {verificationResult.originalHash}
                 </p>
               </div>
-              <div>
-                <p className="font-medium">Current hash:</p>
-                <p className="text-xs break-all font-mono bg-black bg-opacity-80 text-white p-2 rounded">
+              <div className="mt-2">
+                <p className="font-medium text-xs sm:text-sm">Current hash:</p>
+                <p className="text-xs break-all font-mono bg-black bg-opacity-80 text-white p-2 rounded overflow-x-auto scrollbar-thin">
                   {verificationResult.currentHash}
                 </p>
               </div>
@@ -143,7 +152,9 @@ export const DocumentVerification = () => {
       </CardContent>
       <CardFooter className="flex justify-end">
         {verificationResult.status === 'verified' && (
-          <Button variant="outline">Export Verification Report</Button>
+          <Button variant="outline" size={isMobile ? "sm" : "default"}>
+            Export Verification Report
+          </Button>
         )}
       </CardFooter>
     </Card>
