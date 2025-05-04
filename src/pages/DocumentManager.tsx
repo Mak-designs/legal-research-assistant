@@ -6,6 +6,8 @@ import { DocumentVerification } from "@/components/library/DocumentVerification"
 import { supabase } from "@/integrations/supabase/client";
 import Footer from "@/components/layout/Footer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ExternalLinks } from "@/components/library/ExternalLinks";
+import { Card, CardContent } from "@/components/ui/card";
 
 const DocumentManager = () => {
   const navigate = useNavigate();
@@ -66,8 +68,18 @@ const DocumentManager = () => {
             </p>
           </div>
           
-          <div className="w-full">
-            <DocumentVerification />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-2">
+              <DocumentVerification />
+            </div>
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                <CardContent className="p-4 sm:p-6">
+                  <h2 className="text-xl font-semibold mb-4">Legal Resources</h2>
+                  <ExternalLinks />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>
