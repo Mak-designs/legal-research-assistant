@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,9 +17,7 @@ import {
   Info, 
   FileText, 
   Shield,
-  FileDigit
 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -33,7 +30,6 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const isMobile = useIsMobile();
   
   // Check if current route is about, privacy, or terms
   const isInfoPage = ['/about', '/privacy', '/terms'].includes(location.pathname);
@@ -64,12 +60,6 @@ const Navbar: React.FC<NavbarProps> = ({
       requiresAuth: true,
     },
     {
-      name: "Document Manager",
-      href: "/documents",
-      icon: <FileDigit className="h-5 w-5 mr-2" />,
-      requiresAuth: true,
-    },
-    {
       name: "About",
       href: "/about",
       icon: <Info className="h-5 w-5 mr-2" />,
@@ -88,42 +78,39 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="container flex h-14 sm:h-16 items-center justify-between py-2 sm:py-4">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Link to={isAuthenticated ? "/research" : "/"} className="flex items-center space-x-1 sm:space-x-2">
-            <Scale className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <span className="text-base sm:text-xl font-bold">LegalAssist</span>
+      <div className="container flex h-16 items-center justify-between py-4">
+        <div className="flex items-center gap-2">
+          <Link to={isAuthenticated ? "/research" : "/"} className="flex items-center space-x-2">
+            <Scale className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">LegalAssist</span>
           </Link>
         </div>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex items-center gap-4 lg:gap-6">
+        <nav className="hidden md:flex items-center gap-6">
           {navItems
             .filter(item => !item.requiresAuth || isAuthenticated)
-            .filter((_, index) => !isMobile || index < 3) // Limit items on smaller screens
             .map(item => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`text-sm font-medium hover:text-primary transition-colors ${
-                  location.pathname === item.href ? "text-primary font-semibold" : ""
-                }`}
+                className="text-sm font-medium hover:text-primary transition-colors"
               >
                 {item.name}
               </Link>
             ))}
           
           {isAuthenticated ? (
-            <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className={isMobile ? "sr-only" : ""}>Logout</span>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
           ) : (
             !isInfoPage && (
-              <Button size={isMobile ? "sm" : "default"} asChild>
+              <Button asChild>
                 <Link to="/login">
-                  <LogIn className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className={isMobile ? "sr-only" : ""}>Sign In</span>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
                 </Link>
               </Button>
             )
@@ -133,12 +120,12 @@ const Navbar: React.FC<NavbarProps> = ({
         {/* Mobile navigation */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <Menu className="h-5 w-5" />
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-3/4 max-w-xs">
+          <SheetContent side="right">
             <div className="flex flex-col gap-4 py-4">
               {navItems
                 .filter(item => !item.requiresAuth || isAuthenticated)
@@ -146,9 +133,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center text-sm font-medium py-2 hover:text-primary transition-colors ${
-                      location.pathname === item.href ? "text-primary font-semibold" : ""
-                    }`}
+                    className="flex items-center text-sm font-medium py-2 hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.icon}
