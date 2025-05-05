@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { ShieldCheck, ShieldX, Search } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const DocumentVerification = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -14,6 +15,7 @@ export const DocumentVerification = () => {
     currentHash?: string;
     lastVerified?: string;
   }>({ status: null });
+  const isMobile = useIsMobile();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -72,24 +74,24 @@ export const DocumentVerification = () => {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Search className="mr-2 h-5 w-5" />
+    <Card className="w-full shadow-sm">
+      <CardHeader className={isMobile ? "px-4 py-4" : ""}>
+        <CardTitle className="flex items-center text-lg sm:text-xl">
+          <Search className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
           Document Verification
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
         <div className="grid gap-4">
           <div>
             <Input
               id="document-verification"
               type="file"
               onChange={handleFileChange}
-              className="mb-4"
+              className="mb-3 sm:mb-4 text-sm"
             />
             {file && (
-              <p className="text-sm bg-muted p-2 rounded">
+              <p className={`text-xs sm:text-sm bg-muted p-2 rounded ${isMobile ? "break-all" : ""}`}>
                 Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
               </p>
             )}
@@ -98,32 +100,33 @@ export const DocumentVerification = () => {
           <Button 
             onClick={verifyDocument} 
             disabled={!file}
-            className="w-full"
+            className="w-full text-sm"
+            size={isMobile ? "sm" : "default"}
           >
             Verify Document Integrity
           </Button>
         </div>
 
         {verificationResult.status && (
-          <div className={`mt-6 p-4 rounded-md border ${
+          <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-md border ${
             verificationResult.status === 'verified' 
               ? 'bg-green-50 border-green-200' 
               : 'bg-red-50 border-red-200'
           }`}>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-3 sm:mb-4">
               {verificationResult.status === 'verified' ? (
-                <ShieldCheck className="h-8 w-8 text-green-600 mr-2" />
+                <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-2" />
               ) : (
-                <ShieldX className="h-8 w-8 text-red-600 mr-2" />
+                <ShieldX className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 mr-2" />
               )}
-              <h3 className="text-lg font-medium">
+              <h3 className="text-base sm:text-lg font-medium">
                 {verificationResult.status === 'verified' 
                   ? 'Document integrity verified' 
                   : 'Document may be altered!'}
               </h3>
             </div>
             
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-xs sm:text-sm">
               <p><strong>Verification time:</strong> {new Date(verificationResult.lastVerified || '').toLocaleString()}</p>
               <div>
                 <p className="font-medium">Original hash:</p>
@@ -141,9 +144,11 @@ export const DocumentVerification = () => {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end">
+      <CardFooter className={`flex justify-end ${isMobile ? "px-4 py-4" : ""}`}>
         {verificationResult.status === 'verified' && (
-          <Button variant="outline">Export Verification Report</Button>
+          <Button variant="outline" size={isMobile ? "sm" : "default"} className="text-sm">
+            Export Report
+          </Button>
         )}
       </CardFooter>
     </Card>

@@ -1,25 +1,41 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer"; 
 import { DocumentVerification } from "@/components/library/DocumentVerification";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/sonner";
+import { Loader2 } from "lucide-react";
+import { useDeviceType } from "@/hooks/use-mobile";
 
 const DocumentManager = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { isMobile } = useDeviceType();
   
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setIsAuthenticated(false);
+      try {
+        setIsLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setIsAuthenticated(false);
+          navigate("/login");
+          toast.error("Please sign in to access document manager");
+          return;
+        }
+        
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
         navigate("/login");
-        return;
+        toast.error("Authentication error. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsAuthenticated(true);
     };
     
     checkAuth();
@@ -45,21 +61,32 @@ const DocumentManager = () => {
       await supabase.auth.signOut();
       setIsAuthenticated(false);
       navigate("/");
+      toast.success("You have been logged out");
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error("Logout failed. Please try again.");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+        <span className="text-center text-sm sm:text-base">Verifying authentication...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       
-      <main className="flex-1 container py-8">
-        <div className="flex flex-col space-y-6">
+      <main className="flex-1 container py-4 sm:py-6 md:py-8 px-4 sm:px-6">
+        <div className="flex flex-col space-y-4 sm:space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">Document Verification</h1>
-            <p className="text-muted-foreground mt-1">
-              Verify and validate the integrity of legal documents with cryptographic fingerprinting
+            <h1 className="text-2xl sm:text-3xl font-bold">Document Verification</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              Verify and validate the integrity of legal documents
             </p>
           </div>
           
@@ -69,16 +96,7 @@ const DocumentManager = () => {
         </div>
       </main>
       
-      <footer className="border-t bg-muted/50">
-        <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
-          <p className="text-center text-sm text-muted-foreground">
-            @Mak_Designs
-          </p>
-          <p className="text-center text-sm text-muted-foreground">
-            For educational purposes only. Not legal advice.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

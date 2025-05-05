@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import ComparisonTool from "@/components/comparison/ComparisonTool";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Scale, Loader2, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { useDeviceType } from "@/hooks/use-mobile";
 
 const Research = () => {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ const Research = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initialQuery, setInitialQuery] = useState<string | null>(null);
+  const { isMobile, isTablet } = useDeviceType();
   
   useEffect(() => {
     if (location.state && location.state.initialQuery) {
@@ -75,9 +78,9 @@ const Research = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Verifying authentication...</span>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+        <span className="text-center text-sm sm:text-base">Verifying authentication...</span>
       </div>
     );
   }
@@ -86,45 +89,41 @@ const Research = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       
-      <main className="flex-1 container py-8">
-        <div className="flex flex-col space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <main className="flex-1 container py-4 sm:py-6 md:py-8 px-4 sm:px-6">
+        <div className="flex flex-col space-y-4 sm:space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
             <div>
-              <h1 className="text-3xl font-bold flex items-center">
-                <Scale className="h-8 w-8 mr-2 text-primary" />
-                Legal Research Assistant
+              <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
+                <Scale className="h-6 w-6 sm:h-8 sm:w-8 mr-2 text-primary" />
+                Legal Research
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Research and compare legal principles across multiple domains
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
+                Research and compare legal principles
               </p>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
-                <BookOpen className="h-4 w-4 mr-1" />
+            <div className="flex items-center">
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                onClick={() => navigate("/library")}
+                className="text-xs sm:text-sm"
+              >
+                <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                 Your Library
               </Button>
             </div>
           </div>
           
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="shadow-sm">
+            <CardContent className={`${isMobile ? 'p-3 sm:pt-4' : 'pt-6'}`}>
               <ComparisonTool initialQuery={initialQuery} />
             </CardContent>
           </Card>
         </div>
       </main>
       
-      <footer className="border-t bg-muted/50">
-        <div className="container flex flex-col gap-2 sm:flex-row py-6 w-full items-center justify-between">
-          <p className="text-center text-sm text-muted-foreground">
-            @Mak_Designs
-          </p>
-          <p className="text-center text-sm text-muted-foreground">
-            For educational purposes only. Not legal advice.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
