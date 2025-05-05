@@ -2,28 +2,29 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer"; 
-import { DocumentVerification } from "@/components/library/DocumentVerification";
+import Footer from "@/components/layout/Footer";
+import { SystemAuditDashboard } from "@/components/blockchain/SystemAuditDashboard";
 import { DocumentAuditTrail } from "@/components/blockchain/DocumentAuditTrail";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
-import { Loader2, FileCheck, Shield } from "lucide-react";
-import { useDeviceType } from "@/hooks/use-mobile";
+import { AuditCertificate } from "@/components/blockchain/AuditCertificate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { Loader2, Shield, FileCheck, FileText } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useDeviceType } from "@/hooks/use-mobile";
 
-const DocumentManager = () => {
+const BlockchainAudit = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { isMobile } = useDeviceType();
+  const { isMobile, isTablet } = useDeviceType();
   
   // Mock document for demonstration
   const mockDocument = {
     id: 'SMITH2025-BRIEF-01',
-    name: 'Smith v. Jones - Case Brief'
+    name: 'Smith v. Jones - Case Brief',
+    content: 'This case brief outlines the claims brought by Smith against Jones...'
   };
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -33,7 +34,7 @@ const DocumentManager = () => {
         if (!session) {
           setIsAuthenticated(false);
           navigate("/login");
-          toast.error("Please sign in to access document manager");
+          toast.error("Please sign in to access blockchain audit tools");
           return;
         }
         
@@ -92,44 +93,39 @@ const DocumentManager = () => {
       
       <main className="flex-1 container py-4 sm:py-6 md:py-8 px-4 sm:px-6">
         <div className="flex flex-col space-y-4 sm:space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
-                <FileCheck className="h-6 w-6 sm:h-8 sm:w-8 mr-2 text-primary" />
-                Document Manager
-              </h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                Verify, audit, and manage legal documents
-              </p>
-            </div>
-            
-            <div className="flex items-center mt-2 md:mt-0">
-              <Button
-                variant="outline"
-                size={isMobile ? "sm" : "default"}
-                onClick={() => navigate("/blockchain-audit")}
-                className="text-xs sm:text-sm"
-              >
-                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                Blockchain Audit
-              </Button>
-            </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
+              <Shield className="h-6 w-6 sm:h-8 sm:w-8 mr-2 text-primary" />
+              Blockchain Audit Trails
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              Cryptographically secured audit logs for legal documents
+            </p>
           </div>
           
-          <Tabs defaultValue="verification" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="verification">Document Verification</TabsTrigger>
-              <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
+          <Tabs defaultValue="system" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="system">System Audit</TabsTrigger>
+              <TabsTrigger value="document">Document Trail</TabsTrigger>
+              <TabsTrigger value="certificate">Generate Certificate</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="verification" className="space-y-4">
-              <DocumentVerification />
+            <TabsContent value="system" className="space-y-4">
+              <SystemAuditDashboard />
             </TabsContent>
             
-            <TabsContent value="audit-trail" className="space-y-4">
+            <TabsContent value="document" className="space-y-4">
               <DocumentAuditTrail 
                 documentId={mockDocument.id}
                 documentName={mockDocument.name}
+              />
+            </TabsContent>
+            
+            <TabsContent value="certificate" className="space-y-4">
+              <AuditCertificate
+                documentId={mockDocument.id}
+                documentName={mockDocument.name}
+                documentContent={mockDocument.content}
               />
             </TabsContent>
           </Tabs>
@@ -141,4 +137,4 @@ const DocumentManager = () => {
   );
 };
 
-export default DocumentManager;
+export default BlockchainAudit;

@@ -25,6 +25,9 @@ const Footer = () => {
           <Link to="/signatures" className="hover:underline underline-offset-4">
             Signatures
           </Link>
+          <Link to="/blockchain-audit" className="hover:underline underline-offset-4">
+            Audit Trails
+          </Link>
         </nav>
       </div>
     </footer>
