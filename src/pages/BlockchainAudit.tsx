@@ -6,9 +6,10 @@ import Footer from "@/components/layout/Footer";
 import { SystemAuditDashboard } from "@/components/blockchain/SystemAuditDashboard";
 import { DocumentAuditTrail } from "@/components/blockchain/DocumentAuditTrail";
 import { AuditCertificate } from "@/components/blockchain/AuditCertificate";
+import { DocumentTamperDetection } from "@/components/blockchain/DocumentTamperDetection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
-import { Loader2, Shield, FileCheck, FileText } from "lucide-react";
+import { Loader2, Shield, FileCheck, FileText, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceType } from "@/hooks/use-mobile";
 
@@ -104,10 +105,11 @@ const BlockchainAudit = () => {
           </div>
           
           <Tabs defaultValue="system" className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="system">System Audit</TabsTrigger>
               <TabsTrigger value="document">Document Trail</TabsTrigger>
               <TabsTrigger value="certificate">Generate Certificate</TabsTrigger>
+              <TabsTrigger value="tamper">Tamper Detection</TabsTrigger>
             </TabsList>
             
             <TabsContent value="system" className="space-y-4">
@@ -127,6 +129,10 @@ const BlockchainAudit = () => {
                 documentName={mockDocument.name}
                 documentContent={mockDocument.content}
               />
+            </TabsContent>
+            
+            <TabsContent value="tamper" className="space-y-4">
+              <DocumentTamperDetection />
             </TabsContent>
           </Tabs>
         </div>
