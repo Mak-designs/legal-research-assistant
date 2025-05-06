@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Book, Shield, FileDigit, History } from "lucide-react";
+import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark } from "lucide-react";
 
 interface DetailedAnalysisTabProps {
   results: any;
@@ -9,6 +9,42 @@ interface DetailedAnalysisTabProps {
 
 const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) => {
   if (!results) return null;
+  
+  // Determine domain display names
+  const domainDisplayNames = {
+    property: "Property Law",
+    contract: "Contract Law",
+    tort: "Tort Law",
+    constitutional: "Constitutional Law",
+    criminal: "Criminal Law",
+    zambian: "Zambian Law",
+    cyberSecurity: "Cyber Security & Digital Evidence"
+  };
+  
+  const primaryDomainName = domainDisplayNames[results.domains?.[0]] || results.domains?.[0];
+  const secondaryDomainName = domainDisplayNames[results.domains?.[1]] || results.domains?.[1];
+
+  // Choose appropriate icons for domains
+  const getDomainIcon = (domain: string) => {
+    switch(domain) {
+      case 'property':
+        return <Landmark className="mr-2 h-5 w-5 text-amber-600" />;
+      case 'contract':
+        return <Scale className="mr-2 h-5 w-5 text-indigo-600" />;
+      case 'tort':
+        return <Shield className="mr-2 h-5 w-5 text-orange-600" />;
+      case 'constitutional':
+        return <Landmark className="mr-2 h-5 w-5 text-purple-600" />;
+      case 'criminal':
+        return <Gavel className="mr-2 h-5 w-5 text-red-600" />;
+      case 'zambian':
+        return <Globe className="mr-2 h-5 w-5 text-blue-600" />;
+      case 'cyberSecurity':
+        return <FileDigit className="mr-2 h-5 w-5 text-green-600" />;
+      default:
+        return <BookOpen className="mr-2 h-5 w-5 text-primary" />;
+    }
+  };
 
   return (
     <Card>
@@ -81,24 +117,38 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
         )}
         
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold">Common Law Analysis</h3>
+          <h3 className="text-xl font-semibold flex items-center">
+            {getDomainIcon(results.domains?.[0])}
+            {primaryDomainName} Analysis
+          </h3>
           <p>{results.comparison.commonLaw.analysis}</p>
           
-          <h4 className="text-lg font-medium mt-2 flex items-center">
+          {results.comparison.commonLaw.principles && (
+            <>
+              <h4 className="text-lg font-medium mt-2">Key Principles</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {results.comparison.commonLaw.principles.map((principle: string, index: number) => (
+                  <li key={index} className="text-sm">{principle}</li>
+                )).slice(0, 4)}
+              </ul>
+            </>
+          )}
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
             <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
             Relevant Cases
           </h4>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside space-y-1.5">
             {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => (
               <li key={index} className="text-sm">{example}</li>
             ))}
           </ul>
           
-          <h4 className="text-lg font-medium mt-2 flex items-center">
+          <h4 className="text-lg font-medium mt-3 flex items-center">
             <Book className="mr-2 h-4 w-4 text-muted-foreground" />
             Relevant Statutes
           </h4>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside space-y-1.5">
             {results.comparison.commonLaw.statutes?.map((statute: string, index: number) => (
               <li key={index} className="text-sm">{statute}</li>
             ))}
@@ -106,24 +156,38 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold">Contract Law Analysis</h3>
+          <h3 className="text-xl font-semibold flex items-center">
+            {getDomainIcon(results.domains?.[1])}
+            {secondaryDomainName} Analysis
+          </h3>
           <p>{results.comparison.contractLaw.analysis}</p>
           
-          <h4 className="text-lg font-medium mt-2 flex items-center">
+          {results.comparison.contractLaw.principles && (
+            <>
+              <h4 className="text-lg font-medium mt-2">Key Principles</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {results.comparison.contractLaw.principles.map((principle: string, index: number) => (
+                  <li key={index} className="text-sm">{principle}</li>
+                )).slice(0, 4)}
+              </ul>
+            </>
+          )}
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
             <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
             Relevant Cases
           </h4>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside space-y-1.5">
             {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => (
               <li key={index} className="text-sm">{example}</li>
             ))}
           </ul>
           
-          <h4 className="text-lg font-medium mt-2 flex items-center">
+          <h4 className="text-lg font-medium mt-3 flex items-center">
             <Book className="mr-2 h-4 w-4 text-muted-foreground" />
             Relevant Statutes
           </h4>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside space-y-1.5">
             {results.comparison.contractLaw.statutes?.map((statute: string, index: number) => (
               <li key={index} className="text-sm">{statute}</li>
             ))}

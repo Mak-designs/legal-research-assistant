@@ -1,68 +1,78 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { analyzeQuery } from './analyzeQuery.ts';
-import { generateRecommendation, generateTechnicalDetails } from './generateResults.ts';
-import { legalDataset } from './legalDataset.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { analyzeQuery } from "./analyzeQuery.ts";
+import { generateRecommendation, generateTechnicalDetails } from "./generateResults.ts";
+import { legalDataset } from "./legalDataset.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { query } = await req.json();
     
-    // Analyze query to determine relevant legal domains
-    const relevantDomains = analyzeQuery(query);
+    if (!query || typeof query !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid query parameter" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Analyze the query to determine relevant legal domains
+    const [primaryDomain, secondaryDomain] = analyzeQuery(query);
     
-    // Organize data for response, with primary and secondary domains
-    const primaryDomain = relevantDomains[0];
-    const secondaryDomain = relevantDomains[1] || 'contract';
+    // Enhanced logging for debugging
+    console.log(`Processed legal query: "${query}" - Domains: ${primaryDomain}, ${secondaryDomain}\n`);
+
+    // Generate a recommendation based on the query and identified domains
+    const recommendation = generateRecommendation(query, primaryDomain, secondaryDomain);
     
-    // Determine relevance labels based on match
-    const primaryRelevance = "High relevance";
-    const secondaryRelevance = relevantDomains.length > 1 ? "Medium relevance" : "Low relevance";
-    
-    const results = {
-      query: query,
-      timestamp: new Date().toISOString(),
+    // Generate technical details for cybersecurity-related queries
+    const technicalDetails = generateTechnicalDetails(primaryDomain, secondaryDomain);
+
+    // Prepare the response data with comprehensive analysis
+    const responseData = {
+      query,
+      domains: [primaryDomain, secondaryDomain],
+      recommendation,
+      technicalDetails,
       comparison: {
         commonLaw: {
+          analysis: legalDataset[primaryDomain].analysis,
           principles: legalDataset[primaryDomain].principles,
-          relevance: primaryRelevance + " to " + query,
-          caseExamples: legalDataset[primaryDomain].cases.slice(0, 3).map(c => `${c.title} (${c.citation}) - ${c.description}`),
-          statutes: legalDataset[primaryDomain].statutes.slice(0, 2).map(s => `${s.title} (${s.citation}) - ${s.description}`),
-          analysis: legalDataset[primaryDomain].analysis
+          caseExamples: legalDataset[primaryDomain].cases.slice(0, 3).map(
+            (c: any) => `${c.title} (${c.citation}): ${c.description}`
+          ),
+          statutes: legalDataset[primaryDomain].statutes.slice(0, 2).map(
+            (s: any) => `${s.title} (${s.citation}): ${s.description}`
+          ),
         },
         contractLaw: {
+          analysis: legalDataset[secondaryDomain].analysis,
           principles: legalDataset[secondaryDomain].principles,
-          relevance: secondaryRelevance + " to " + query,
-          caseExamples: legalDataset[secondaryDomain].cases.slice(0, 3).map(c => `${c.title} (${c.citation}) - ${c.description}`),
-          statutes: legalDataset[secondaryDomain].statutes.slice(0, 2).map(s => `${s.title} (${s.citation}) - ${s.description}`),
-          analysis: legalDataset[secondaryDomain].analysis
-        }
+          caseExamples: legalDataset[secondaryDomain].cases.slice(0, 3).map(
+            (c: any) => `${c.title} (${c.citation}): ${c.description}`
+          ),
+          statutes: legalDataset[secondaryDomain].statutes.slice(0, 2).map(
+            (s: any) => `${s.title} (${s.citation}): ${s.description}`
+          ),
+        },
       },
-      recommendation: generateRecommendation(query, primaryDomain, secondaryDomain),
-      technicalDetails: generateTechnicalDetails(primaryDomain, secondaryDomain)
     };
-    
-    console.log(`Processed legal query: "${query}" - Domains: ${primaryDomain}, ${secondaryDomain}`);
-    
-    return new Response(JSON.stringify(results), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+
+    return new Response(JSON.stringify(responseData), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
   } catch (error) {
-    console.error('Error in legal search:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Error processing legal search:", error);
+    
+    return new Response(
+      JSON.stringify({ error: "Failed to process legal search query" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
 });

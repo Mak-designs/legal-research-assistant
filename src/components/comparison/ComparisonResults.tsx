@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2, FileDigit, Globe } from "lucide-react";
+import { Save, Trash2, FileDigit, Globe, BookOpen } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,12 +60,17 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
 
   if (!results) return null;
 
-  // Check if this is a Zambian law query
-  const isZambianLaw = results.query.toLowerCase().includes('zambian') || 
-                       results.query.toLowerCase().includes('zambia');
+  // Enhanced relevance detection
+  const isZambianLaw = results.domains?.includes('zambian') || 
+                       results.query?.toLowerCase().includes('zambia') || 
+                       results.query?.toLowerCase().includes('zambian');
                       
-  // Check if this is a digital evidence/cybersecurity query
-  const isDigitalEvidence = results.technicalDetails !== undefined;
+  const isDigitalEvidence = results.domains?.includes('cyberSecurity') ||
+                            results.technicalDetails !== undefined;
+                            
+  const isConstitutional = results.domains?.includes('constitutional');
+  
+  const isCriminal = results.domains?.includes('criminal');
 
   return (
     <Card>
@@ -96,28 +101,33 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
         
         {/* Jurisdiction and context badges */}
         <div className="flex flex-wrap gap-2">
-          {isZambianLaw && (
-            <div className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-              <Globe className="h-3 w-3 mr-1" />
-              Zambian Law Context
+          {results.domains && results.domains.map((domain: string, index: number) => (
+            <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : 
+                domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' :
+                domain === 'constitutional' ? 'bg-purple-100 text-purple-800' :
+                domain === 'criminal' ? 'bg-red-100 text-red-800' :
+                domain === 'property' ? 'bg-amber-100 text-amber-800' :
+                domain === 'contract' ? 'bg-indigo-100 text-indigo-800' :
+                domain === 'tort' ? 'bg-orange-100 text-orange-800' :
+                'bg-gray-100 text-gray-800'}`}
+            >
+              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : 
+               domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> :
+               <BookOpen className="h-3 w-3 mr-1" />}
+              {domain.charAt(0).toUpperCase() + domain.slice(1)} Law
             </div>
-          )}
-          {isDigitalEvidence && (
-            <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-              <FileDigit className="h-3 w-3 mr-1" />
-              Digital Evidence Analysis
-            </div>
-          )}
+          ))}
         </div>
 
         <div className="space-y-4">
           <div>
-            <h4 className="font-medium mb-2">Common Law</h4>
+            <h4 className="font-medium mb-2">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
             <p className="text-muted-foreground">{results.comparison.commonLaw.analysis}</p>
           </div>
           
           <div>
-            <h4 className="font-medium mb-2">Contract Law</h4>
+            <h4 className="font-medium mb-2">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Analysis</h4>
             <p className="text-muted-foreground">{results.comparison.contractLaw.analysis}</p>
           </div>
           
