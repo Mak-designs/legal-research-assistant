@@ -2,8 +2,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { Loader2, Search, Globe, FileDigit, BookOpen } from "lucide-react";
+import { Loader2, Search, Send, Globe, FileDigit, BookOpen } from "lucide-react";
 import { 
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ interface QueryFormProps {
   setJurisdiction: (jurisdiction: string) => void;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => Promise<void>;
+  isChatMode?: boolean;
 }
 
 const QueryForm: React.FC<QueryFormProps> = ({
@@ -27,7 +29,8 @@ const QueryForm: React.FC<QueryFormProps> = ({
   jurisdiction,
   setJurisdiction,
   isLoading,
-  onSubmit
+  onSubmit,
+  isChatMode = false
 }) => {
   // Provide example queries
   const exampleQueries = {
@@ -61,21 +64,46 @@ const QueryForm: React.FC<QueryFormProps> = ({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="query" className="text-sm font-medium">
-          Enter your legal research query
-        </label>
-        <Textarea
-          id="query"
-          placeholder={jurisdiction === "zambian" 
-            ? "e.g., How does Zambian law handle digital evidence in court proceedings?" 
-            : "e.g., What are the differences between common law and contract law regarding property rights?"}
-          className="min-h-32 resize-none"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
+      {isChatMode ? (
+        <div className="space-y-2">
+          <div className="flex items-end space-x-2">
+            <div className="flex-1">
+              <Input
+                placeholder="Ask a legal question..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                disabled={isLoading}
+                className="h-12"
+              />
+            </div>
+            <Button type="submit" disabled={isLoading || !query.trim()} size="icon" className="h-12 w-12">
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <label htmlFor="query" className="text-sm font-medium">
+              Enter your legal research query
+            </label>
+            <Textarea
+              id="query"
+              placeholder={jurisdiction === "zambian" 
+                ? "e.g., How does Zambian law handle digital evidence in court proceedings?" 
+                : "e.g., What are the differences between common law and contract law regarding property rights?"}
+              className="min-h-32 resize-none"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+        </>
+      )}
       
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="w-full sm:w-1/3">
@@ -86,7 +114,6 @@ const QueryForm: React.FC<QueryFormProps> = ({
             value={jurisdiction} 
             onValueChange={(value) => {
               setJurisdiction(value);
-              setQuery(''); // Clear query when jurisdiction changes
             }} 
             disabled={isLoading}
           >
@@ -110,39 +137,43 @@ const QueryForm: React.FC<QueryFormProps> = ({
           </Select>
         </div>
         
-        <div className="flex justify-end items-end">
-          <Button type="submit" disabled={isLoading || !query.trim()}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Research
-              </>
-            )}
-          </Button>
-        </div>
+        {!isChatMode && (
+          <div className="flex justify-end items-end">
+            <Button type="submit" disabled={isLoading || !query.trim()}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Research
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
       
       {/* Example query button */}
-      <div className="mt-4">
-        <h3 className="text-sm font-medium mb-2 flex items-center">
-          <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
-          Try a Sample Legal Question
-        </h3>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          type="button"
-          onClick={handleExampleClick}
-          className="text-xs"
-        >
-          {getRandomExample()}
-        </Button>
-      </div>
+      {!isChatMode && (
+        <div className="mt-4">
+          <h3 className="text-sm font-medium mb-2 flex items-center">
+            <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
+            Try a Sample Legal Question
+          </h3>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            type="button"
+            onClick={handleExampleClick}
+            className="text-xs"
+          >
+            {getRandomExample()}
+          </Button>
+        </div>
+      )}
       
       {jurisdiction === "zambian" && (
         <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
@@ -159,18 +190,20 @@ const QueryForm: React.FC<QueryFormProps> = ({
         </div>
       )}
       
-      <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
-        <div className="flex items-start">
-          <FileDigit className="h-5 w-5 text-slate-500 mr-2 mt-0.5" />
-          <div>
-            <h4 className="text-sm font-medium text-slate-700">Enhanced Legal Research</h4>
-            <p className="text-xs text-slate-600 mt-1">
-              Our legal research system analyzes relevant case law, statutes, and legal principles 
-              to provide comprehensive answers drawn from verified legal sources.
-            </p>
+      {!isChatMode && (
+        <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
+          <div className="flex items-start">
+            <FileDigit className="h-5 w-5 text-slate-500 mr-2 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-medium text-slate-700">Enhanced Legal Research</h4>
+              <p className="text-xs text-slate-600 mt-1">
+                Our legal research system analyzes relevant case law, statutes, and legal principles 
+                to provide comprehensive answers drawn from verified legal sources.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </form>
   );
 };
