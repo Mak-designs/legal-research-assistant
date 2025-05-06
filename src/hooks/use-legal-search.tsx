@@ -35,7 +35,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
         }
       }
       
-      // Use the new AI-powered legal research function
+      // Use the AI-powered legal research function with improved error handling
       const { data, error } = await supabase.functions.invoke('ai-legal-research', {
         body: { 
           query: enhancedQuery,

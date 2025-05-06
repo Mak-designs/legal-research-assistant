@@ -128,12 +128,12 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
         <div className="space-y-4">
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.comparison.commonLaw.analysis}</p>
+            <p className="text-muted-foreground">{results.aiResponse && results.aiResponse.primaryAnalysis ? results.aiResponse.primaryAnalysis : results.comparison.commonLaw.analysis}</p>
           </div>
           
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.comparison.contractLaw.analysis}</p>
+            <p className="text-muted-foreground">{results.aiResponse && results.aiResponse.secondaryAnalysis ? results.aiResponse.secondaryAnalysis : results.comparison.contractLaw.analysis}</p>
           </div>
           
           {isDigitalEvidence && (
@@ -155,7 +155,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
             <p className="text-primary">{formattedRecommendation}</p>
           </div>
 
-          {/* Source notification without mentioning ChatGPT */}
+          {/* Source notification without mentioning AI */}
           <div className="text-xs text-muted-foreground mt-2">
             Analysis based on verified legal databases and jurisdictional resources.
           </div>

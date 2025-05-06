@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark, Globe } from "lucide-react";
@@ -45,6 +46,10 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
     }
   };
 
+  // Use AI analysis if available, otherwise fall back to the default analysis
+  const primaryAnalysis = results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis;
+  const secondaryAnalysis = results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis;
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
@@ -72,7 +77,7 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
                 Hashing Techniques
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {results.technicalDetails.hashingTechniques.map((technique, index) => (
+                {results.technicalDetails.hashingTechniques?.map((technique, index) => (
                   <div key={index} className="border p-2 rounded bg-white">
                     <p className="font-medium">{technique.algorithm}</p>
                     <p className="text-sm text-muted-foreground">{technique.description}</p>
@@ -95,7 +100,7 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.technicalDetails.chainOfCustody.map((step, index) => (
+                    {results.technicalDetails.chainOfCustody?.map((step, index) => (
                       <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                         <td className="border px-4 py-2">{step.step}</td>
                         <td className="border px-4 py-2">{step.requirements}</td>
@@ -120,7 +125,7 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
             {getDomainIcon(results.domains?.[0])}
             {primaryDomainName} Analysis
           </h3>
-          <p>{results.comparison.commonLaw.analysis}</p>
+          <p>{primaryAnalysis}</p>
           
           {results.comparison.commonLaw.principles && (
             <>
@@ -159,7 +164,7 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
             {getDomainIcon(results.domains?.[1])}
             {secondaryDomainName} Analysis
           </h3>
-          <p>{results.comparison.contractLaw.analysis}</p>
+          <p>{secondaryAnalysis}</p>
           
           {results.comparison.contractLaw.principles && (
             <>
