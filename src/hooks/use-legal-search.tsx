@@ -35,9 +35,11 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
         }
       }
       
-      const { data, error } = await supabase.functions.invoke('legal-search', {
+      // Use the new AI-powered legal research function
+      const { data, error } = await supabase.functions.invoke('ai-legal-research', {
         body: { 
-          query: enhancedQuery
+          query: enhancedQuery,
+          jurisdiction: jurisdiction
         }
       });
       
@@ -62,6 +64,49 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Analysis failed. Please try again later.");
+      
+      // Fallback to the original legal-search function if AI function fails
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        let enhancedQuery = query;
+        if (jurisdiction === "zambian") {
+          enhancedQuery = `Zambian law: ${query}`;
+          
+          if (query.toLowerCase().includes('evidence') || 
+              query.toLowerCase().includes('digital') || 
+              query.toLowerCase().includes('electronic')) {
+            enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
+          }
+        }
+        
+        const { data, error } = await supabase.functions.invoke('legal-search', {
+          body: { 
+            query: enhancedQuery
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (session?.user) {
+          try {
+            await supabase.from('search_history').insert({
+              query: `${jurisdiction === "zambian" ? "[Zambian] " : ""}${query} (fallback)`,
+              user_id: session.user.id,
+              results_count: data.comparison.commonLaw.caseExamples.length + 
+                            data.comparison.contractLaw.caseExamples.length
+            });
+          } catch (historyError) {
+            console.error("Failed to save search history:", historyError);
+          }
+        }
+        
+        setResults(data);
+        toast.success("Analysis complete (standard mode)!");
+      } catch (fallbackError) {
+        console.error("Fallback search error:", fallbackError);
+        toast.error("All analysis methods failed. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }

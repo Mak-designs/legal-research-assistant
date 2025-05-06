@@ -120,7 +120,7 @@ const QueryForm: React.FC<QueryFormProps> = ({
             ) : (
               <>
                 <Search className="mr-2 h-4 w-4" />
-                Analyze
+                Research
               </>
             )}
           </Button>
@@ -131,7 +131,7 @@ const QueryForm: React.FC<QueryFormProps> = ({
       <div className="mt-4">
         <h3 className="text-sm font-medium mb-2 flex items-center">
           <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
-          Try an Example Query
+          Try a Sample Legal Question
         </h3>
         <Button 
           variant="outline" 
@@ -163,10 +163,10 @@ const QueryForm: React.FC<QueryFormProps> = ({
         <div className="flex items-start">
           <FileDigit className="h-5 w-5 text-slate-500 mr-2 mt-0.5" />
           <div>
-            <h4 className="text-sm font-medium text-slate-700">Digital Evidence Research</h4>
+            <h4 className="text-sm font-medium text-slate-700">Enhanced Legal Research</h4>
             <p className="text-xs text-slate-600 mt-1">
-              For digital evidence or cybersecurity queries, include terms like "digital evidence," "chain of custody," 
-              or "evidence integrity" to receive technical verification details and legal standards.
+              Our legal research system analyzes relevant case law, statutes, and legal principles 
+              to provide comprehensive answers drawn from verified legal sources.
             </p>
           </div>
         </div>

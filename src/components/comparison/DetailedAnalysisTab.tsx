@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark } from "lucide-react";
+import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark, Globe } from "lucide-react";
 
 interface DetailedAnalysisTabProps {
   results: any;

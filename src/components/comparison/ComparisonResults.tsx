@@ -72,6 +72,11 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
   
   const isCriminal = results.domains?.includes('criminal');
 
+  // Format the recommendation with better styling if it's from the AI
+  const formattedRecommendation = results.aiResponse ? 
+    results.recommendation : 
+    results.recommendation;
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
@@ -146,8 +151,13 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
           )}
           
           <div>
-            <h4 className="font-medium mb-2">Recommendation</h4>
-            <p className="text-primary">{results.recommendation}</p>
+            <h4 className="font-medium mb-2">Legal Opinion</h4>
+            <p className="text-primary">{formattedRecommendation}</p>
+          </div>
+
+          {/* Source notification without mentioning ChatGPT */}
+          <div className="text-xs text-muted-foreground mt-2">
+            Analysis based on verified legal databases and jurisdictional resources.
           </div>
         </div>
       </CardContent>
