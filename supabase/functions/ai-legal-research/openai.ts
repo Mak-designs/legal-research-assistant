@@ -23,6 +23,8 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
   }
 
   try {
+    console.log("Generating AI response for query:", query.substring(0, 50) + "...");
+    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -30,12 +32,12 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
         "Authorization": `Bearer ${openaiApiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-mini", // Using the more affordable model to avoid quota issues
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze this legal query: "${query}"` }
         ],
-        temperature: 0.2,
+        temperature: 0.7, // Slightly higher temperature for more conversational tone
         max_tokens: 2000
       })
     });
@@ -55,6 +57,8 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : '{}';
       const parsedResponse = JSON.parse(jsonString);
+      
+      console.log("Successfully parsed AI response");
       
       return {
         recommendation: parsedResponse.recommendation || "Analysis not available based on provided information.",

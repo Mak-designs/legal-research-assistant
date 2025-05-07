@@ -123,20 +123,20 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
           ))}
         </div>
 
-        <div className="space-y-4">
-          {/* Primary domain analysis - now using dynamically generated content */}
-          <div>
-            <h4 className="font-medium mb-2">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
+        <div className="space-y-6">
+          {/* Primary domain analysis - now using conversational content */}
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
+            <h4 className="font-medium text-lg mb-3">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
             <div className="prose max-w-none">
-              <p className="text-muted-foreground whitespace-pre-line">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
+              <p className="text-slate-800 whitespace-pre-line leading-relaxed">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
             </div>
           </div>
           
-          {/* Secondary domain analysis - now using dynamically generated content */}
-          <div>
-            <h4 className="font-medium mb-2">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Analysis</h4>
+          {/* Secondary domain analysis */}
+          <div className="bg-white border border-slate-200 rounded-lg p-5">
+            <h4 className="font-medium text-lg mb-3">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Perspective</h4>
             <div className="prose max-w-none">
-              <p className="text-muted-foreground whitespace-pre-line">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
+              <p className="text-slate-700 whitespace-pre-line leading-relaxed">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
             </div>
           </div>
           
@@ -154,15 +154,15 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
             </div>
           )}
           
-          {/* Recommendation - now using query-specific recommendation */}
-          <div>
-            <h4 className="font-medium mb-2">Legal Opinion</h4>
+          {/* Recommendation - with enhanced styling */}
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+            <h4 className="font-medium text-lg mb-3 text-primary">Legal Opinion</h4>
             <div className="prose max-w-none">
-              <p className="text-primary whitespace-pre-line">{formattedRecommendation}</p>
+              <p className="text-primary-700 whitespace-pre-line font-medium">{formattedRecommendation}</p>
             </div>
           </div>
 
-          {/* Source notification without mentioning AI */}
+          {/* Source notification */}
           <div className="text-xs text-muted-foreground mt-2">
             Analysis based on verified legal databases and jurisdictional resources.
           </div>
