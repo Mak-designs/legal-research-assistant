@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { analyzeQuery } from "../legal-search/analyzeQuery.ts";
-import { legalDataset } from "../legal-search/legalDataset.ts";
+import { analyzeQuery } from "./analyzeQuery.ts";
+import { legalDataset } from "./legalDataset.ts";
 import { findRelevantCases, findRelevantStatutes, extractRelevantPrinciples } from "./relevance.ts";
 import { generateAILegalResponse } from "./openai.ts";
 import { buildSystemPrompt } from "./promptBuilder.ts";
