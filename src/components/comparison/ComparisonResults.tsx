@@ -73,9 +73,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
   const isCriminal = results.domains?.includes('criminal');
 
   // Format the recommendation with better styling if it's from the AI
-  const formattedRecommendation = results.aiResponse ? 
-    results.recommendation : 
-    results.recommendation;
+  const formattedRecommendation = results.aiResponse?.recommendation || results.recommendation;
 
   return (
     <Card>
@@ -126,14 +124,16 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
         </div>
 
         <div className="space-y-4">
+          {/* Primary domain analysis - now using dynamically generated content */}
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.aiResponse && results.aiResponse.primaryAnalysis ? results.aiResponse.primaryAnalysis : results.comparison.commonLaw.analysis}</p>
+            <p className="text-muted-foreground">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
           </div>
           
+          {/* Secondary domain analysis - now using dynamically generated content */}
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.aiResponse && results.aiResponse.secondaryAnalysis ? results.aiResponse.secondaryAnalysis : results.comparison.contractLaw.analysis}</p>
+            <p className="text-muted-foreground">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
           </div>
           
           {isDigitalEvidence && (
@@ -150,6 +150,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
             </div>
           )}
           
+          {/* Recommendation - now using query-specific recommendation */}
           <div>
             <h4 className="font-medium mb-2">Legal Opinion</h4>
             <p className="text-primary">{formattedRecommendation}</p>

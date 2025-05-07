@@ -35,7 +35,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
         }
       }
       
-      // Use the AI-powered legal research function with improved error handling
+      // Use the AI-powered legal research function
       const { data, error } = await supabase.functions.invoke('ai-legal-research', {
         body: { 
           query: enhancedQuery,
@@ -44,6 +44,8 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       });
       
       if (error) throw error;
+      
+      console.log("AI legal research results:", data);
       
       // Always save the search in history when successful
       if (session?.user) {
