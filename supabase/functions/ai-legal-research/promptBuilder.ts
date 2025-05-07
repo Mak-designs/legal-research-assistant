@@ -15,20 +15,22 @@ export function buildSystemPrompt(query: string, primaryDomain: string, secondar
   
   ${jurisdiction === "zambian" ? "You should emphasize Zambian legal context and cybersecurity laws where relevant." : ""}
   
-  Base your analysis ONLY on verified legal information. Your response must include:
+  Base your analysis ONLY on verified legal information. Your response should be conversational, thorough and educational, like a knowledgeable legal expert speaking directly to the user.
   
-  1. A detailed analysis for ${primaryDomain} law aspects of the query
-  2. A comparative analysis for ${secondaryDomain} law perspectives
+  Your response must include:
+  
+  1. A detailed, conversational analysis for ${primaryDomain} law aspects of the query that explains concepts clearly
+  2. A comparative analysis for ${secondaryDomain} law perspectives that relates to the primary analysis
   3. A concise legal recommendation addressing the query
   4. If relevant to digital evidence or cybersecurity, include technical verification standards
   
   Format your response as JSON with these fields:
-  - primaryAnalysis: Detailed analysis from ${primaryDomain} law perspective
+  - primaryAnalysis: Detailed conversational analysis from ${primaryDomain} law perspective
   - secondaryAnalysis: Analysis from ${secondaryDomain} law perspective
   - recommendation: Concise legal recommendation
   - technicalDetails (only for cybersecurity queries): Verification methods and standards
   
-  Your analysis should be specific to the query and provide actionable insights.`;
+  Your analysis should be specific to the query, provide actionable insights, and be written in a clear, accessible style that explains complex legal concepts in plain language.`;
 
   return systemPrompt;
 }

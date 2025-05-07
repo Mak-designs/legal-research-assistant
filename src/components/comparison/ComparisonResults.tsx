@@ -127,13 +127,17 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
           {/* Primary domain analysis - now using dynamically generated content */}
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
+            <div className="prose max-w-none">
+              <p className="text-muted-foreground whitespace-pre-line">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
+            </div>
           </div>
           
           {/* Secondary domain analysis - now using dynamically generated content */}
           <div>
             <h4 className="font-medium mb-2">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Analysis</h4>
-            <p className="text-muted-foreground">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
+            <div className="prose max-w-none">
+              <p className="text-muted-foreground whitespace-pre-line">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
+            </div>
           </div>
           
           {isDigitalEvidence && (
@@ -153,7 +157,9 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
           {/* Recommendation - now using query-specific recommendation */}
           <div>
             <h4 className="font-medium mb-2">Legal Opinion</h4>
-            <p className="text-primary">{formattedRecommendation}</p>
+            <div className="prose max-w-none">
+              <p className="text-primary whitespace-pre-line">{formattedRecommendation}</p>
+            </div>
           </div>
 
           {/* Source notification without mentioning AI */}

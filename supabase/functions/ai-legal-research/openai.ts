@@ -35,8 +35,8 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze this legal query: "${query}"` }
         ],
-        temperature: 0.3,
-        max_tokens: 1500
+        temperature: 0.2,
+        max_tokens: 2000
       })
     });
 

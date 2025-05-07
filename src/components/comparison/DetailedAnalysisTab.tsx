@@ -60,7 +60,9 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
         
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">Recommendation</h3>
-          <p>{results.recommendation}</p>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-line">{results.recommendation}</p>
+          </div>
         </div>
         
         {/* Display technical details for digital evidence if available */}
@@ -125,7 +127,9 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
             {getDomainIcon(results.domains?.[0])}
             {primaryDomainName} Analysis
           </h3>
-          <p>{primaryAnalysis}</p>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-line">{primaryAnalysis}</p>
+          </div>
           
           {results.comparison.commonLaw.principles && (
             <>
@@ -164,7 +168,9 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({ results }) =>
             {getDomainIcon(results.domains?.[1])}
             {secondaryDomainName} Analysis
           </h3>
-          <p>{secondaryAnalysis}</p>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-line">{secondaryAnalysis}</p>
+          </div>
           
           {results.comparison.contractLaw.principles && (
             <>
