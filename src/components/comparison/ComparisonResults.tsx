@@ -77,8 +77,39 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
   // Format the recommendation with better styling if it's from the AI
   const formattedRecommendation = results.aiResponse?.recommendation || results.recommendation;
 
+  // Format the case title for display
+  const formatCaseDisplay = (caseText: string) => {
+    if (!caseText) return "";
+    
+    // Split by colon to separate title/citation from description
+    const parts = caseText.split(": ");
+    if (parts.length < 2) return caseText;
+    
+    return (
+      <div className="mb-2">
+        <div className="font-medium">{parts[0]}</div>
+        <div className="text-sm text-slate-600">{parts[1]}</div>
+      </div>
+    );
+  };
+
+  // Format domain names for display
+  const getDomainDisplayName = (domain: string) => {
+    const domainMap: Record<string, string> = {
+      'contract': 'Contract Law',
+      'property': 'Property Law',
+      'tort': 'Tort Law',
+      'constitutional': 'Constitutional Law',
+      'criminal': 'Criminal Law',
+      'zambian': 'Zambian Law',
+      'cyberSecurity': 'Cyber Security Law'
+    };
+    
+    return domainMap[domain] || domain.charAt(0).toUpperCase() + domain.slice(1);
+  };
+
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardContent className="pt-6 space-y-4">
         {apiStatus === "quota_exceeded" && (
           <Alert variant="destructive" className="bg-amber-50 border-amber-200">
@@ -90,8 +121,17 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
           </Alert>
         )}
 
+        {/* Case header with query as title */}
+        <div className="border-b pb-4">
+          <h2 className="text-xl font-semibold">{results.query}</h2>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <div className="text-sm text-gray-500">Court: AI Analysis</div>
+            <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+        
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold">Analysis Results</h3>
+          <h3 className="text-lg font-medium">Legal Analysis</h3>
           <div className="space-x-2">
             <Button 
               variant="outline" 
@@ -114,7 +154,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
           </div>
         </div>
         
-        {/* Jurisdiction and context badges */}
+        {/* Domain badges */}
         <div className="flex flex-wrap gap-2">
           {results.domains && results.domains.map((domain: string, index: number) => (
             <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
@@ -130,25 +170,50 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
               {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : 
                domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> :
                <BookOpen className="h-3 w-3 mr-1" />}
-              {domain.charAt(0).toUpperCase() + domain.slice(1)} Law
+              {getDomainDisplayName(domain)}
             </div>
           ))}
         </div>
 
         <div className="space-y-6">
-          {/* Primary domain analysis - now using conversational content */}
+          {/* Primary domain analysis */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3">{results.domains?.[0].charAt(0).toUpperCase() + results.domains?.[0].slice(1)} Law Analysis</h4>
+            <h4 className="font-medium text-lg mb-3">
+              {getDomainDisplayName(results.domains?.[0])} Analysis
+            </h4>
             <div className="prose max-w-none">
-              <p className="text-slate-800 whitespace-pre-line leading-relaxed">{results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}</p>
+              <p className="text-slate-800 whitespace-pre-line leading-relaxed">
+                {results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}
+              </p>
             </div>
           </div>
           
           {/* Secondary domain analysis */}
           <div className="bg-white border border-slate-200 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3">{results.domains?.[1].charAt(0).toUpperCase() + results.domains?.[1].slice(1)} Law Perspective</h4>
+            <h4 className="font-medium text-lg mb-3">
+              {getDomainDisplayName(results.domains?.[1])} Perspective
+            </h4>
             <div className="prose max-w-none">
-              <p className="text-slate-700 whitespace-pre-line leading-relaxed">{results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}</p>
+              <p className="text-slate-700 whitespace-pre-line leading-relaxed">
+                {results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}
+              </p>
+            </div>
+          </div>
+          
+          {/* Case examples section */}
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
+            <h4 className="font-medium text-lg mb-3">Relevant Case Law</h4>
+            <div className="divide-y">
+              {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => (
+                <div key={index} className="py-3 first:pt-0 last:pb-0">
+                  {formatCaseDisplay(example)}
+                </div>
+              ))}
+              {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => (
+                <div key={index} className="py-3">
+                  {formatCaseDisplay(example)}
+                </div>
+              ))}
             </div>
           </div>
           
@@ -161,7 +226,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
               <p className="text-sm">
                 This analysis includes technical verification details for digital evidence. 
                 View the "Detailed Analysis" tab for hash verification methods, chain of custody requirements, 
-                and integrity verification techniques that meet Zambian legal standards.
+                and integrity verification techniques that meet legal standards.
               </p>
             </div>
           )}
@@ -172,11 +237,6 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
             <div className="prose max-w-none">
               <p className="text-primary-700 whitespace-pre-line font-medium">{formattedRecommendation}</p>
             </div>
-          </div>
-
-          {/* Source notification */}
-          <div className="text-xs text-muted-foreground mt-2">
-            Analysis based on verified legal databases and jurisdictional resources.
           </div>
         </div>
       </CardContent>
