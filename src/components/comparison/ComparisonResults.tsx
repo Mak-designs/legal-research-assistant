@@ -81,7 +81,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
     <Card>
       <CardContent className="pt-6 space-y-4">
         {apiStatus === "quota_exceeded" && (
-          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               AI-powered analysis is currently limited due to API usage quotas. You're viewing our standard analysis instead. 
