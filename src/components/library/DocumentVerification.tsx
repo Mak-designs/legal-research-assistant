@@ -3,11 +3,20 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { ShieldCheck, ShieldX, Search } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useDeviceType } from "@/hooks/use-mobile";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
+import { recordDocumentEvent } from "@/utils/blockchainUtil";
 
-export const DocumentVerification = () => {
+export const DocumentVerification = ({ selectedCase = null }) => {
   const [file, setFile] = useState<File | null>(null);
   const [verificationResult, setVerificationResult] = useState<{
     status: 'verified' | 'modified' | null;
@@ -15,7 +24,8 @@ export const DocumentVerification = () => {
     currentHash?: string;
     lastVerified?: string;
   }>({ status: null });
-  const isMobile = useIsMobile();
+  const { isMobile } = useDeviceType();
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -26,11 +36,7 @@ export const DocumentVerification = () => {
 
   const verifyDocument = async () => {
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a document to verify",
-        variant: "destructive"
-      });
+      toast.error("No file selected. Please select a document to verify.");
       return;
     }
 
@@ -47,30 +53,65 @@ export const DocumentVerification = () => {
       // In a real app, you would look up the hash from your database
       const simulatedStoredHash = Math.random() > 0.3 ? currentHash : 'differenthash123456789';
       
+      const status = currentHash === simulatedStoredHash ? 'verified' : 'modified';
+      
+      // Record this verification event in the blockchain audit trail
+      const documentId = selectedCase ? selectedCase.case_id : `doc-${file.name.replace(/\s+/g, '-')}`;
+      const documentName = selectedCase ? selectedCase.title : file.name;
+      
+      // Record the verification event in the blockchain
+      recordDocumentEvent(
+        status === 'verified' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_MODIFIED',
+        documentId,
+        documentName,
+        'current-user', // In a real app, get this from authentication context
+        'user@example.com', // In a real app, get this from authentication context
+        `Document ${status === 'verified' ? 'verification succeeded' : 'verification failed - possible tampering detected'}`
+      );
+      
       setVerificationResult({
-        status: currentHash === simulatedStoredHash ? 'verified' : 'modified',
+        status,
         originalHash: simulatedStoredHash,
         currentHash: currentHash,
         lastVerified: new Date().toISOString()
       });
       
-      toast({
-        title: currentHash === simulatedStoredHash 
-          ? "Document verified" 
+      toast[status === 'verified' ? 'success' : 'error'](
+        status === 'verified' 
+          ? "Document verified successfully" 
           : "Document verification failed",
-        description: currentHash === simulatedStoredHash 
-          ? "The document integrity is verified and matches our records." 
-          : "The document may have been modified since it was last stored.",
-        variant: currentHash === simulatedStoredHash ? "default" : "destructive"
-      });
+        {
+          description: status === 'verified' 
+            ? "The document integrity is verified and matches our records." 
+            : "The document may have been modified since it was last stored."
+        }
+      );
+      
+      // Navigate to the audit trail tab to show the verification record
+      if (status === 'verified') {
+        setTimeout(() => {
+          toast.info("Verification recorded in audit trail", { 
+            description: "You can view the verification record in the document audit trail." 
+          });
+        }, 1500);
+      }
+      
     } catch (error) {
       console.error("Error verifying document:", error);
-      toast({
-        title: "Verification failed",
-        description: "There was an error verifying the document integrity.",
-        variant: "destructive"
+      toast.error("Verification failed", { 
+        description: "There was an error verifying the document integrity." 
       });
     }
+  };
+
+  const viewAuditTrail = () => {
+    if (!selectedCase && !file) return;
+    
+    const documentId = selectedCase ? selectedCase.case_id : `doc-${file.name.replace(/\s+/g, '-')}`;
+    const documentName = selectedCase ? selectedCase.title : file.name;
+    
+    // Use navigate to go to the BlockchainAudit page with query parameters
+    navigate(`/blockchain-audit?documentId=${encodeURIComponent(documentId)}&documentName=${encodeURIComponent(documentName)}`);
   };
 
   return (
@@ -83,6 +124,15 @@ export const DocumentVerification = () => {
       </CardHeader>
       <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
         <div className="grid gap-4">
+          {selectedCase && (
+            <div>
+              <p className="text-sm font-medium mb-1">Selected Case:</p>
+              <div className="bg-muted p-2 rounded text-xs sm:text-sm">
+                {selectedCase.title} ({selectedCase.case_id})
+              </div>
+            </div>
+          )}
+          
           <div>
             <Input
               id="document-verification"
@@ -110,14 +160,14 @@ export const DocumentVerification = () => {
         {verificationResult.status && (
           <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-md border ${
             verificationResult.status === 'verified' 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
+              ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' 
+              : 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900'
           }`}>
             <div className="flex items-center mb-3 sm:mb-4">
               {verificationResult.status === 'verified' ? (
-                <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-2" />
+                <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-500 mr-2" />
               ) : (
-                <ShieldX className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 mr-2" />
+                <ShieldX className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 dark:text-red-500 mr-2" />
               )}
               <h3 className="text-base sm:text-lg font-medium">
                 {verificationResult.status === 'verified' 
@@ -144,9 +194,14 @@ export const DocumentVerification = () => {
           </div>
         )}
       </CardContent>
-      <CardFooter className={`flex justify-end ${isMobile ? "px-4 py-4" : ""}`}>
+      <CardFooter className={`flex justify-between gap-2 ${isMobile ? "px-4 py-4 flex-col" : ""}`}>
+        {verificationResult.status && (
+          <Button onClick={viewAuditTrail} variant="outline" size={isMobile ? "sm" : "default"} className="text-sm">
+            View Audit Trail
+          </Button>
+        )}
         {verificationResult.status === 'verified' && (
-          <Button variant="outline" size={isMobile ? "sm" : "default"} className="text-sm">
+          <Button variant="outline" size={isMobile ? "sm" : "default"} className={`text-sm ${isMobile ? "w-full" : "ml-auto"}`}>
             Export Report
           </Button>
         )}

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer"; 
 import { DocumentVerification } from "@/components/library/DocumentVerification";
@@ -14,15 +14,26 @@ import { Button } from "@/components/ui/button";
 
 const DocumentManager = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isMobile } = useDeviceType();
+  const [activeTab, setActiveTab] = useState<string>("verification");
   
-  // Mock document for demonstration
-  const mockDocument = {
-    id: 'SMITH2025-BRIEF-01',
-    name: 'Smith v. Jones - Case Brief'
-  };
+  // Get selected case from location state if available
+  const selectedCase = location.state?.selectedCase || null;
+  
+  // Get document ID and name from URL query parameters if available
+  const searchParams = new URLSearchParams(location.search);
+  const documentId = searchParams.get('documentId') || selectedCase?.case_id || 'SMITH2025-BRIEF-01';
+  const documentName = searchParams.get('documentName') || selectedCase?.title || 'Smith v. Jones - Case Brief';
+  
+  // Set active tab based on query parameters
+  useEffect(() => {
+    if (searchParams.get('tab') === 'audit-trail') {
+      setActiveTab('audit-trail');
+    }
+  }, [location.search]);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -77,6 +88,10 @@ const DocumentManager = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -116,20 +131,20 @@ const DocumentManager = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="verification" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-2 mb-4">
               <TabsTrigger value="verification">Document Verification</TabsTrigger>
               <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
             </TabsList>
             
             <TabsContent value="verification" className="space-y-4">
-              <DocumentVerification />
+              <DocumentVerification selectedCase={selectedCase} />
             </TabsContent>
             
             <TabsContent value="audit-trail" className="space-y-4">
               <DocumentAuditTrail 
-                documentId={mockDocument.id}
-                documentName={mockDocument.name}
+                documentId={documentId}
+                documentName={documentName}
               />
             </TabsContent>
           </Tabs>

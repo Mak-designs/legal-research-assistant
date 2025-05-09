@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { SystemAuditDashboard } from "@/components/blockchain/SystemAuditDashboard";
@@ -15,16 +15,30 @@ import { useDeviceType } from "@/hooks/use-mobile";
 
 const BlockchainAudit = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isMobile, isTablet } = useDeviceType();
+  const [activeTab, setActiveTab] = useState<string>("system");
   
-  // Mock document for demonstration
+  // Parse query parameters for document information
+  const searchParams = new URLSearchParams(location.search);
+  const documentId = searchParams.get('documentId');
+  const documentName = searchParams.get('documentName');
+  
+  // Mock document for demonstration (use query params if available)
   const mockDocument = {
-    id: 'SMITH2025-BRIEF-01',
-    name: 'Smith v. Jones - Case Brief',
+    id: documentId || 'SMITH2025-BRIEF-01',
+    name: documentName || 'Smith v. Jones - Case Brief',
     content: 'This case brief outlines the claims brought by Smith against Jones...'
   };
+  
+  // Set active tab based on query parameters
+  useEffect(() => {
+    if (documentId && documentName) {
+      setActiveTab('document');
+    }
+  }, [documentId, documentName]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,6 +92,10 @@ const BlockchainAudit = () => {
       toast.error("Logout failed. Please try again.");
     }
   };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   if (isLoading) {
     return (
@@ -104,7 +122,7 @@ const BlockchainAudit = () => {
             </p>
           </div>
           
-          <Tabs defaultValue="system" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="system">System Audit</TabsTrigger>
               <TabsTrigger value="document">Document Trail</TabsTrigger>
