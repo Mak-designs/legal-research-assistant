@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -12,47 +11,50 @@ import { toast } from "@/components/ui/sonner";
 import { Loader2, Shield, FileCheck, FileText, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceType } from "@/hooks/use-mobile";
-
 const BlockchainAudit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { isMobile, isTablet } = useDeviceType();
+  const {
+    isMobile,
+    isTablet
+  } = useDeviceType();
   const [activeTab, setActiveTab] = useState<string>("system");
-  
+
   // Parse query parameters for document information
   const searchParams = new URLSearchParams(location.search);
   const documentId = searchParams.get('documentId');
   const documentName = searchParams.get('documentName');
-  
+
   // Mock document for demonstration (use query params if available)
   const mockDocument = {
     id: documentId || 'SMITH2025-BRIEF-01',
     name: documentName || 'Smith v. Jones - Case Brief',
     content: 'This case brief outlines the claims brought by Smith against Jones...'
   };
-  
+
   // Set active tab based on query parameters
   useEffect(() => {
     if (documentId && documentName) {
       setActiveTab('document');
     }
   }, [documentId, documentName]);
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: {
+            session
+          }
+        } = await supabase.auth.getSession();
         if (!session) {
           setIsAuthenticated(false);
           navigate("/login");
           toast.error("Please sign in to access blockchain audit tools");
           return;
         }
-        
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Authentication check failed:", error);
@@ -62,25 +64,23 @@ const BlockchainAudit = () => {
         setIsLoading(false);
       }
     };
-    
     checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
-          navigate("/login");
-        } else if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-        }
+    const {
+      data: {
+        subscription
       }
-    );
-    
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        navigate("/login");
+      } else if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true);
+      }
+    });
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -92,22 +92,16 @@ const BlockchainAudit = () => {
       toast.error("Logout failed. Please try again.");
     }
   };
-  
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
-
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    return <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
         <span className="text-center text-sm sm:text-base">Verifying authentication...</span>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       
       <main className="flex-1 container py-4 sm:py-6 md:py-8 px-4 sm:px-6">
@@ -124,7 +118,7 @@ const BlockchainAudit = () => {
           
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="system">System Audit</TabsTrigger>
+              
               <TabsTrigger value="document">Document Trail</TabsTrigger>
               <TabsTrigger value="certificate">Generate Certificate</TabsTrigger>
               <TabsTrigger value="tamper">Tamper Detection</TabsTrigger>
@@ -135,18 +129,11 @@ const BlockchainAudit = () => {
             </TabsContent>
             
             <TabsContent value="document" className="space-y-4">
-              <DocumentAuditTrail 
-                documentId={mockDocument.id}
-                documentName={mockDocument.name}
-              />
+              <DocumentAuditTrail documentId={mockDocument.id} documentName={mockDocument.name} />
             </TabsContent>
             
             <TabsContent value="certificate" className="space-y-4">
-              <AuditCertificate
-                documentId={mockDocument.id}
-                documentName={mockDocument.name}
-                documentContent={mockDocument.content}
-              />
+              <AuditCertificate documentId={mockDocument.id} documentName={mockDocument.name} documentContent={mockDocument.content} />
             </TabsContent>
             
             <TabsContent value="tamper" className="space-y-4">
@@ -157,8 +144,6 @@ const BlockchainAudit = () => {
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default BlockchainAudit;
