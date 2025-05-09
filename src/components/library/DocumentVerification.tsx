@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,8 +110,7 @@ export const DocumentVerification = () => {
           ? `Document does not match case: ${caseInfo.title}` 
           : "Document verification failed";
         
-      toast({
-        title: isVerified ? "Document verified" : "Document verification failed",
+      toast(isVerified ? "Document verified" : "Document verification failed", {
         description: toastMessage,
         variant: isVerified ? "default" : "destructive"
       });
@@ -143,7 +141,7 @@ export const DocumentVerification = () => {
                 <SelectValue placeholder="Select a case" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific case</SelectItem>
+                <SelectItem value="none">No specific case</SelectItem>
                 {savedCases.map((caseItem) => (
                   <SelectItem key={caseItem.id} value={caseItem.id}>
                     <div className="flex items-center">

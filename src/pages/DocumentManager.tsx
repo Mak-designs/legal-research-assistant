@@ -148,7 +148,7 @@ const DocumentManager = () => {
             </div>
           </div>
           
-          {selectedCaseId && (
+          {selectedCaseId && selectedCaseId !== "none" && (
             <div className="bg-muted p-3 rounded-md flex items-center">
               <FileCheck className="h-5 w-5 text-primary mr-2" />
               <div>
