@@ -8,6 +8,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [results, setResults] = useState<any | null>(null);
   const [jurisdiction, setJurisdiction] = useState<string>("general");
+  const [apiStatus, setApiStatus] = useState<"available" | "quota_exceeded" | "error" | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +19,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     }
     
     setIsLoading(true);
+    setApiStatus(null);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -47,6 +49,18 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       
       console.log("AI legal research results:", data);
       
+      // Check for API status in the response
+      if (data.aiResponse?.error === "quota_exceeded") {
+        setApiStatus("quota_exceeded");
+        toast.warning("AI analysis is limited due to API quota. Standard analysis is shown instead.", {
+          duration: 6000
+        });
+      } else if (data.aiResponse?.error) {
+        setApiStatus("error");
+      } else {
+        setApiStatus("available");
+      }
+      
       // Always save the search in history when successful
       if (session?.user) {
         try {
@@ -66,6 +80,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Analysis failed. Please try again later.");
+      setApiStatus("error");
       
       // Fallback to the original legal-search function if AI function fails
       try {
@@ -121,6 +136,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     results,
     jurisdiction,
     setJurisdiction,
+    apiStatus,
     handleSearch
   };
 };

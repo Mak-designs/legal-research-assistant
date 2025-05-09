@@ -34,4 +34,3 @@ export function buildSystemPrompt(query: string, primaryDomain: string, secondar
 
   return systemPrompt;
 }
-

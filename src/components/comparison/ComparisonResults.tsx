@@ -2,15 +2,17 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2, FileDigit, Globe, BookOpen } from "lucide-react";
+import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ComparisonResultsProps {
   results: any;
+  apiStatus?: "available" | "quota_exceeded" | "error" | null;
 }
 
-const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
+const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatus }) => {
   const handleSave = async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -78,6 +80,16 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results }) => {
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
+        {apiStatus === "quota_exceeded" && (
+          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              AI-powered analysis is currently limited due to API usage quotas. You're viewing our standard analysis instead. 
+              For detailed analysis, please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Analysis Results</h3>
           <div className="space-x-2">
