@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -12,7 +11,6 @@ import { CaseDialog } from "@/components/library/CaseDialog";
 import { DeleteCaseDialog } from "@/components/library/DeleteCaseDialog";
 import { ExternalLinks } from "@/components/library/ExternalLinks";
 import type { SavedCase } from "@/components/library/types";
-
 const Library = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -22,30 +20,30 @@ const Library = () => {
   const [caseToDelete, setCaseToDelete] = useState<SavedCase | null>(null);
   const [selectedCase, setSelectedCase] = useState<SavedCase | null>(null);
   const [showCaseDialog, setShowCaseDialog] = useState<boolean>(false);
-  
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: {
+            session
+          }
+        } = await supabase.auth.getSession();
         if (!session) {
           setIsAuthenticated(false);
           navigate("/login");
           toast.error("Please sign in to access the legal library");
           return;
         }
-        
         setIsAuthenticated(true);
-        
-        const { data: casesData, error: casesError } = await supabase
-          .from('saved_cases')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        
+        const {
+          data: casesData,
+          error: casesError
+        } = await supabase.from('saved_cases').select('*').order('updated_at', {
+          ascending: false
+        });
         if (casesError) throw casesError;
         setSavedCases(casesData || []);
-        
       } catch (error) {
         console.error("Authentication or data fetch error:", error);
         toast.error("Failed to load your legal library data");
@@ -53,25 +51,23 @@ const Library = () => {
         setIsLoading(false);
       }
     };
-    
     checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
-          navigate("/login");
-        } else if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-        }
+    const {
+      data: {
+        subscription
       }
-    );
-    
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        navigate("/login");
+      } else if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true);
+      }
+    });
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
-  
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -83,18 +79,13 @@ const Library = () => {
       toast.error("Logout failed. Please try again.");
     }
   };
-  
   const handleDeleteCase = async () => {
     if (!caseToDelete) return;
-    
     try {
-      const { error } = await supabase
-        .from('saved_cases')
-        .delete()
-        .eq('id', caseToDelete.id);
-      
+      const {
+        error
+      } = await supabase.from('saved_cases').delete().eq('id', caseToDelete.id);
       if (error) throw error;
-      
       setSavedCases(savedCases.filter(caseItem => caseItem.id !== caseToDelete.id));
       toast.success("Case deleted successfully");
     } catch (error) {
@@ -105,16 +96,17 @@ const Library = () => {
       setCaseToDelete(null);
     }
   };
-
   const handleSaveCase = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to save cases");
         return;
       }
-      
       const newCase = {
         case_id: `case-${Math.floor(Math.random() * 1000)}`,
         title: `Test Case ${Math.floor(Math.random() * 100)}`,
@@ -123,14 +115,11 @@ const Library = () => {
         citation: "123 U.S. 456 (2025)",
         user_id: user.id
       };
-      
-      const { data, error } = await supabase
-        .from('saved_cases')
-        .insert(newCase)
-        .select();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('saved_cases').insert(newCase).select();
       if (error) throw error;
-      
       if (data && data.length > 0) {
         setSavedCases([...savedCases, data[0]]);
         toast.success("Case saved to your library");
@@ -140,18 +129,13 @@ const Library = () => {
       toast.error("Failed to save case to your library");
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
+    return <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Loading your legal library...</span>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       
       <main className="flex-1 container py-8">
@@ -190,23 +174,15 @@ const Library = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                {savedCases.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-6">
+                {savedCases.length === 0 ? <p className="text-muted-foreground text-center py-6">
                     You haven't saved any cases yet.
-                  </p>
-                ) : (
-                  <SavedCasesTable 
-                    savedCases={savedCases}
-                    onViewCase={(caseItem) => {
-                      setSelectedCase(caseItem);
-                      setShowCaseDialog(true);
-                    }}
-                    onDeleteCase={(caseItem) => {
-                      setCaseToDelete(caseItem);
-                      setShowDeleteDialog(true);
-                    }}
-                  />
-                )}
+                  </p> : <SavedCasesTable savedCases={savedCases} onViewCase={caseItem => {
+                setSelectedCase(caseItem);
+                setShowCaseDialog(true);
+              }} onDeleteCase={caseItem => {
+                setCaseToDelete(caseItem);
+                setShowDeleteDialog(true);
+              }} />}
               </CardContent>
             </Card>
           </div>
@@ -218,27 +194,13 @@ const Library = () => {
           <p className="text-center text-sm text-muted-foreground">
             @Mak_Designs
           </p>
-          <p className="text-center text-sm text-muted-foreground">
-            For educational purposes only. Not legal advice.
-          </p>
+          <p className="text-center text-sm text-muted-foreground"></p>
         </div>
       </footer>
       
-      <DeleteCaseDialog 
-        caseToDelete={caseToDelete}
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirmDelete={handleDeleteCase}
-      />
+      <DeleteCaseDialog caseToDelete={caseToDelete} open={showDeleteDialog} onOpenChange={setShowDeleteDialog} onConfirmDelete={handleDeleteCase} />
 
-      <CaseDialog 
-        selectedCase={selectedCase}
-        open={showCaseDialog}
-        onOpenChange={setShowCaseDialog}
-      />
-    </div>
-  );
+      <CaseDialog selectedCase={selectedCase} open={showCaseDialog} onOpenChange={setShowCaseDialog} />
+    </div>;
 };
-
 export default Library;
-
