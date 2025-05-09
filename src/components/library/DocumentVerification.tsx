@@ -1,21 +1,52 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
-import { ShieldCheck, ShieldX, Search } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/components/ui/sonner";
+import { ShieldCheck, ShieldX, Search, FileText } from "lucide-react";
+import { useDeviceType } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SavedCase } from "@/components/library/types";
 
 export const DocumentVerification = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
+  const [selectedCaseId, setSelectedCaseId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<{
     status: 'verified' | 'modified' | null;
     originalHash?: string;
     currentHash?: string;
     lastVerified?: string;
   }>({ status: null });
-  const isMobile = useIsMobile();
+  const { isMobile } = useDeviceType();
+
+  // Fetch saved cases when component mounts
+  useEffect(() => {
+    const fetchSavedCases = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('saved_cases')
+          .select('*')
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        setSavedCases(data || []);
+      } catch (error) {
+        console.error("Error fetching saved cases:", error);
+        toast.error("Failed to load your saved cases");
+      }
+    };
+
+    fetchSavedCases();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -26,15 +57,12 @@ export const DocumentVerification = () => {
 
   const verifyDocument = async () => {
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a document to verify",
-        variant: "destructive"
-      });
+      toast.error("Please select a document to verify");
       return;
     }
 
     try {
+      setIsLoading(true);
       // In a real implementation, you'd send the file to your backend for verification
       // against stored hash values. Here we're simulating the verification process
       const arrayBuffer = await file.arrayBuffer();
@@ -43,33 +71,56 @@ export const DocumentVerification = () => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      // Simulate checking against stored hash
-      // In a real app, you would look up the hash from your database
-      const simulatedStoredHash = Math.random() > 0.3 ? currentHash : 'differenthash123456789';
+      // Check if we have a selected case to verify against
+      let simulatedStoredHash = currentHash;
+      let caseInfo = null;
+      
+      if (selectedCaseId) {
+        // Find the selected case
+        const selectedCase = savedCases.find(c => c.id === selectedCaseId);
+        if (selectedCase) {
+          caseInfo = selectedCase;
+          
+          // In a real implementation, you would use the hash stored with the case
+          // Here we're simulating a 70% chance of verification success for selected cases
+          if (Math.random() > 0.3) {
+            simulatedStoredHash = currentHash;
+          } else {
+            simulatedStoredHash = 'differenthash123456789';
+          }
+        }
+      } else {
+        // If no case is selected, use the original random simulation
+        simulatedStoredHash = Math.random() > 0.3 ? currentHash : 'differenthash123456789';
+      }
+      
+      const isVerified = currentHash === simulatedStoredHash;
       
       setVerificationResult({
-        status: currentHash === simulatedStoredHash ? 'verified' : 'modified',
+        status: isVerified ? 'verified' : 'modified',
         originalHash: simulatedStoredHash,
         currentHash: currentHash,
         lastVerified: new Date().toISOString()
       });
       
+      const toastMessage = isVerified 
+        ? caseInfo 
+          ? `Document verified against case: ${caseInfo.title}` 
+          : "Document integrity verified"
+        : caseInfo 
+          ? `Document does not match case: ${caseInfo.title}` 
+          : "Document verification failed";
+        
       toast({
-        title: currentHash === simulatedStoredHash 
-          ? "Document verified" 
-          : "Document verification failed",
-        description: currentHash === simulatedStoredHash 
-          ? "The document integrity is verified and matches our records." 
-          : "The document may have been modified since it was last stored.",
-        variant: currentHash === simulatedStoredHash ? "default" : "destructive"
+        title: isVerified ? "Document verified" : "Document verification failed",
+        description: toastMessage,
+        variant: isVerified ? "default" : "destructive"
       });
     } catch (error) {
       console.error("Error verifying document:", error);
-      toast({
-        title: "Verification failed",
-        description: "There was an error verifying the document integrity.",
-        variant: "destructive"
-      });
+      toast.error("There was an error verifying the document integrity.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,6 +134,28 @@ export const DocumentVerification = () => {
       </CardHeader>
       <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
         <div className="grid gap-4">
+          <div>
+            <label htmlFor="case-selection" className="block text-sm font-medium mb-2">
+              Select a saved case to verify against (optional)
+            </label>
+            <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a case" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No specific case</SelectItem>
+                {savedCases.map((caseItem) => (
+                  <SelectItem key={caseItem.id} value={caseItem.id}>
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-primary" />
+                      {caseItem.title}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <div>
             <Input
               id="document-verification"
@@ -99,11 +172,11 @@ export const DocumentVerification = () => {
           
           <Button 
             onClick={verifyDocument} 
-            disabled={!file}
+            disabled={!file || isLoading}
             className="w-full text-sm"
             size={isMobile ? "sm" : "default"}
           >
-            Verify Document Integrity
+            {isLoading ? "Verifying..." : "Verify Document Integrity"}
           </Button>
         </div>
 
@@ -128,6 +201,11 @@ export const DocumentVerification = () => {
             
             <div className="space-y-2 text-xs sm:text-sm">
               <p><strong>Verification time:</strong> {new Date(verificationResult.lastVerified || '').toLocaleString()}</p>
+              {selectedCaseId && (
+                <p><strong>Verified against case:</strong> {
+                  savedCases.find(c => c.id === selectedCaseId)?.title || 'Unknown case'
+                }</p>
+              )}
               <div>
                 <p className="font-medium">Original hash:</p>
                 <p className="text-xs break-all font-mono bg-black bg-opacity-80 text-white p-2 rounded">

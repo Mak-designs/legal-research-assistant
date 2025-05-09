@@ -7,7 +7,7 @@ import { DocumentVerification } from "@/components/library/DocumentVerification"
 import { DocumentAuditTrail } from "@/components/blockchain/DocumentAuditTrail";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { Loader2, FileCheck, Shield } from "lucide-react";
+import { Loader2, FileCheck, Shield, ArrowLeft } from "lucide-react";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ const DocumentManager = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isMobile } = useDeviceType();
+  const [selectedCaseId, setSelectedCaseId] = useState<string>("");
+  const [selectedCaseTitle, setSelectedCaseTitle] = useState<string>("");
   
   // Mock document for demonstration
   const mockDocument = {
@@ -59,6 +61,21 @@ const DocumentManager = () => {
         }
       }
     );
+
+    // Check for case selection from library
+    const caseId = localStorage.getItem('verifyWithCaseId');
+    const caseTitle = localStorage.getItem('verifyWithCaseTitle');
+    
+    if (caseId) {
+      setSelectedCaseId(caseId);
+      setSelectedCaseTitle(caseTitle || "Selected Case");
+      // Clear from localStorage to prevent reuse on subsequent visits
+      localStorage.removeItem('verifyWithCaseId');
+      localStorage.removeItem('verifyWithCaseTitle');
+
+      // Show toast notification
+      toast.success(`Case "${caseTitle}" selected for verification`);
+    }
     
     return () => {
       subscription.unsubscribe();
@@ -75,6 +92,10 @@ const DocumentManager = () => {
       console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
     }
+  };
+
+  const handleReturnToLibrary = () => {
+    navigate("/library");
   };
 
   if (isLoading) {
@@ -103,7 +124,18 @@ const DocumentManager = () => {
               </p>
             </div>
             
-            <div className="flex items-center mt-2 md:mt-0">
+            <div className="flex items-center gap-2 mt-2 md:mt-0">
+              {selectedCaseId && (
+                <Button
+                  variant="outline"
+                  size={isMobile ? "sm" : "default"}
+                  onClick={handleReturnToLibrary}
+                  className="text-xs sm:text-sm"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                  Back to Library
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size={isMobile ? "sm" : "default"}
@@ -115,6 +147,16 @@ const DocumentManager = () => {
               </Button>
             </div>
           </div>
+          
+          {selectedCaseId && (
+            <div className="bg-muted p-3 rounded-md flex items-center">
+              <FileCheck className="h-5 w-5 text-primary mr-2" />
+              <div>
+                <p className="text-sm font-medium">Using case for verification:</p>
+                <p className="text-sm text-muted-foreground">{selectedCaseTitle}</p>
+              </div>
+            </div>
+          )}
           
           <Tabs defaultValue="verification" className="w-full">
             <TabsList className="grid grid-cols-2 mb-4">

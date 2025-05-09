@@ -1,17 +1,24 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileDigit, Shield, ShieldCheck, ShieldX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import type { SavedCase } from './types';
+
 interface CaseDialogProps {
   selectedCase: SavedCase | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
 export const CaseDialog = ({
   selectedCase,
   onOpenChange,
   open
 }: CaseDialogProps) => {
+  const navigate = useNavigate();
+
   const renderIntegrityStatus = (status: string) => {
     switch (status) {
       case 'verified':
@@ -31,6 +38,19 @@ export const CaseDialog = ({
           </div>;
     }
   };
+
+  const handleVerifyWithDocument = () => {
+    if (selectedCase) {
+      // Close the dialog
+      onOpenChange(false);
+      
+      // Navigate to the document manager with case ID in localStorage
+      localStorage.setItem('verifyWithCaseId', selectedCase.id);
+      localStorage.setItem('verifyWithCaseTitle', selectedCase.title);
+      navigate('/documents');
+    }
+  };
+
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -46,6 +66,18 @@ export const CaseDialog = ({
         </DialogHeader>
         
         <div className="mt-4 space-y-4">
+          {/* Add button to verify a document against this case */}
+          <div className="flex justify-end">
+            <Button 
+              variant="outline"
+              onClick={handleVerifyWithDocument}
+              className="flex items-center"
+            >
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Verify Document Against This Case
+            </Button>
+          </div>
+
           {selectedCase?.notes && <div className="space-y-4">
               {(() => {
             try {
