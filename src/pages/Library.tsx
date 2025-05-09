@@ -168,10 +168,7 @@ const Library = () => {
                   <FileText className="h-5 w-5 mr-2 text-primary" />
                   Saved Cases
                 </CardTitle>
-                <Button size="sm" onClick={handleSaveCase} className="flex items-center">
-                  <Save className="h-4 w-4 mr-1" />
-                  Save Test Case
-                </Button>
+                
               </CardHeader>
               <CardContent>
                 {savedCases.length === 0 ? <p className="text-muted-foreground text-center py-6">
