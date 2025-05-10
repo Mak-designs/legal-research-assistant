@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Block, getDocumentBlocks, verifyBlockchain } from "@/utils/blockchainUtil";
@@ -9,6 +8,8 @@ import { toast } from "@/components/ui/sonner";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface DocumentAuditTrailProps {
   documentId: string;
@@ -24,27 +25,68 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
+  const [userVerifiedDocuments, setUserVerifiedDocuments] = useState<string[]>([]);
   
   const {
     isMobile
   } = useDeviceType();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    const fetchBlocks = () => {
+    const fetchUserVerifications = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session || !session.user) return [];
+        
+        // In a real implementation, we would fetch the user's verified documents from the database
+        // For now, we'll simulate this by looking for DOCUMENT_VERIFIED events by the current user
+        const allBlocks = getDocumentBlocks(documentId);
+        const verifiedBlocks = allBlocks.filter(block => 
+          block.data.type === 'DOCUMENT_VERIFIED' &&
+          block.data.userEmail === session.user.email
+        );
+        
+        // If the document has been verified by the current user, add it to the list
+        if (verifiedBlocks.length > 0) {
+          setUserVerifiedDocuments([documentId]);
+        }
+        
+        return verifiedBlocks.length > 0 ? [documentId] : [];
+      } catch (error) {
+        console.error("Error fetching user verifications:", error);
+        return [];
+      }
+    };
+    
+    const fetchBlocks = async () => {
       try {
         setIsLoading(true);
         // Get blocks related to this document
         const documentBlocks = getDocumentBlocks(documentId);
-        setBlocks(documentBlocks);
-
-        // Verify blockchain integrity
-        const verification = verifyBlockchain();
-        setIsVerified(verification.valid);
         
-        // Show toast when blocks are loaded successfully
-        if (documentBlocks.length > 0) {
-          toast.success("Audit trail loaded", { 
-            description: `Found ${documentBlocks.length} verified records for this document.` 
+        // Check if this document has been verified by the current user
+        const verified = await fetchUserVerifications();
+        const isDocVerified = verified.includes(documentId);
+        
+        // Only show blocks if the document has been verified by the user
+        if (isDocVerified) {
+          setBlocks(documentBlocks);
+          
+          // Verify blockchain integrity
+          const verification = verifyBlockchain();
+          setIsVerified(verification.valid);
+          
+          // Show toast when blocks are loaded successfully
+          if (documentBlocks.length > 0) {
+            toast.success("Audit trail loaded", { 
+              description: `Found ${documentBlocks.length} verified records for this document.` 
+            });
+          }
+        } else {
+          // If not verified by the user, show empty blocks
+          setBlocks([]);
+          toast.info("No verified documents found", {
+            description: "Only verified documents will show audit trails."
           });
         }
       } catch (error) {
@@ -99,68 +141,85 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : blocks.length === 0 ? (
-            <div className="py-6 text-center text-muted-foreground">
-              No audit trail found for this document
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center flex-wrap gap-2">
-                  <Badge variant="outline">Document ID: {documentId}</Badge>
-                  {isVerified !== null && (
-                    <Badge variant={isVerified ? "default" : "destructive"}>
-                      {isVerified ? "Verified" : "Verification Failed"}
-                    </Badge>
+          ) : userVerifiedDocuments.includes(documentId) ? (
+            blocks.length === 0 ? (
+              <div className="py-6 text-center text-muted-foreground">
+                No audit trail found for this document
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center flex-wrap gap-2">
+                    <Badge variant="outline">Document ID: {documentId}</Badge>
+                    {isVerified !== null && (
+                      <Badge variant={isVerified ? "default" : "destructive"}>
+                        {isVerified ? "Verified" : "Verification Failed"}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-3 mt-4">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <FileCheck className="h-4 w-4 mr-1" /> Timeline:
+                  </h3>
+                  <ul className="space-y-3">
+                    {blocks.map((block) => (
+                      <li 
+                        key={block.hash} 
+                        className="relative pl-6 pb-3 border-l-2 border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/20 rounded-md px-2 pt-1"
+                        onClick={() => viewBlockDetails(block)}
+                      >
+                        <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary"></div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(block.timestamp)} - {block.data.type} by {block.data.userEmail}
+                        </div>
+                        <div className="mt-1 text-xs font-mono">
+                          └── Block #{block.index} | Hash: {block.hash.substring(0, 12)}...
+                        </div>
+                        {block.data.details && (
+                          <div className="mt-1 text-xs italic text-muted-foreground">
+                            {block.data.details}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="flex items-center mt-4 bg-muted rounded-md p-2">
+                  {isVerified ? (
+                    <div className="flex items-center text-green-600 text-xs sm:text-sm">
+                      <FileCheck className="h-4 w-4 mr-1" /> Timeline Verified - All records cryptographically secured
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-red-600 text-xs sm:text-sm">
+                      <FileWarning className="h-4 w-4 mr-1" /> Verification failed - Blockchain integrity compromised
+                    </div>
                   )}
                 </div>
-              </div>
-              
-              <div className="space-y-3 mt-4">
-                <h3 className="text-sm font-medium flex items-center">
-                  <FileCheck className="h-4 w-4 mr-1" /> Timeline:
-                </h3>
-                <ul className="space-y-3">
-                  {blocks.map((block) => (
-                    <li 
-                      key={block.hash} 
-                      className="relative pl-6 pb-3 border-l-2 border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/20 rounded-md px-2 pt-1"
-                      onClick={() => viewBlockDetails(block)}
-                    >
-                      <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary"></div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDate(block.timestamp)} - {block.data.type} by {block.data.userEmail}
-                      </div>
-                      <div className="mt-1 text-xs font-mono">
-                        └── Block #{block.index} | Hash: {block.hash.substring(0, 12)}...
-                      </div>
-                      {block.data.details && (
-                        <div className="mt-1 text-xs italic text-muted-foreground">
-                          {block.data.details}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="flex items-center mt-4 bg-muted rounded-md p-2">
-                {isVerified ? (
-                  <div className="flex items-center text-green-600 text-xs sm:text-sm">
-                    <FileCheck className="h-4 w-4 mr-1" /> Timeline Verified - All records cryptographically secured
-                  </div>
-                ) : (
-                  <div className="flex items-center text-red-600 text-xs sm:text-sm">
-                    <FileWarning className="h-4 w-4 mr-1" /> Verification failed - Blockchain integrity compromised
-                  </div>
-                )}
-              </div>
-            </>
+              </>
+            )
+          ) : (
+            <div className="py-8 text-center">
+              <FileWarning className="h-12 w-12 mx-auto text-amber-500 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Document Not Verified</h3>
+              <p className="text-muted-foreground mb-4">
+                This document hasn't been verified by you yet. Only verified documents will display audit trails.
+              </p>
+              <Button 
+                onClick={() => navigate(-1)} 
+                variant="outline" 
+                size="sm"
+              >
+                Back to Verification
+              </Button>
+            </div>
           )}
         </CardContent>
         
         <CardFooter className={isMobile ? "px-4 py-4" : ""}>
-          {blocks.length > 0 && (
+          {blocks.length > 0 && userVerifiedDocuments.includes(documentId) && (
             <Button
               variant="outline"
               size={isMobile ? "sm" : "default"}

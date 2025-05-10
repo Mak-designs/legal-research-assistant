@@ -8,6 +8,7 @@ import { ShieldCheck, ShieldX, Search, History } from "lucide-react";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { recordDocumentEvent } from "@/utils/blockchainUtil";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DocumentVerification = ({ selectedCase = null }) => {
   const [file, setFile] = useState<File | null>(null);
@@ -21,6 +22,23 @@ export const DocumentVerification = ({ selectedCase = null }) => {
   }>({ status: null });
   const { isMobile } = useDeviceType();
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  // Get current user email on component mount
+  React.useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          setUserEmail(session.user.email || null);
+        }
+      } catch (error) {
+        console.error("Error fetching user session:", error);
+      }
+    };
+    
+    fetchUserEmail();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -60,7 +78,7 @@ export const DocumentVerification = ({ selectedCase = null }) => {
         documentId,
         documentName,
         'current-user', // In a real app, get this from authentication context
-        'user@example.com', // In a real app, get this from authentication context
+        userEmail || 'user@example.com', // Now using actual user email
         `Document ${status === 'verified' ? 'verification succeeded' : 'verification failed - possible tampering detected'}`
       );
       
