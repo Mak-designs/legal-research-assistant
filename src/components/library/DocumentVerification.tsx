@@ -4,15 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { ShieldCheck, ShieldX, Search } from "lucide-react";
+import { ShieldCheck, ShieldX, Search, History } from "lucide-react";
 import { useDeviceType } from "@/hooks/use-mobile";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { recordDocumentEvent } from "@/utils/blockchainUtil";
 
@@ -23,6 +16,8 @@ export const DocumentVerification = ({ selectedCase = null }) => {
     originalHash?: string;
     currentHash?: string;
     lastVerified?: string;
+    documentId?: string;
+    documentName?: string;
   }>({ status: null });
   const { isMobile } = useDeviceType();
   const navigate = useNavigate();
@@ -55,7 +50,7 @@ export const DocumentVerification = ({ selectedCase = null }) => {
       
       const status = currentHash === simulatedStoredHash ? 'verified' : 'modified';
       
-      // Record this verification event in the blockchain audit trail
+      // Generate document ID and name
       const documentId = selectedCase ? selectedCase.case_id : `doc-${file.name.replace(/\s+/g, '-')}`;
       const documentName = selectedCase ? selectedCase.title : file.name;
       
@@ -73,7 +68,9 @@ export const DocumentVerification = ({ selectedCase = null }) => {
         status,
         originalHash: simulatedStoredHash,
         currentHash: currentHash,
-        lastVerified: new Date().toISOString()
+        lastVerified: new Date().toISOString(),
+        documentId,
+        documentName
       });
       
       toast[status === 'verified' ? 'success' : 'error'](
@@ -87,11 +84,11 @@ export const DocumentVerification = ({ selectedCase = null }) => {
         }
       );
       
-      // Navigate to the audit trail tab to show the verification record
+      // Show audit trail notification for verified documents
       if (status === 'verified') {
         setTimeout(() => {
           toast.info("Verification recorded in audit trail", { 
-            description: "You can view the verification record in the document audit trail." 
+            description: "You can view the verification record in the document audit trail."
           });
         }, 1500);
       }
@@ -105,13 +102,10 @@ export const DocumentVerification = ({ selectedCase = null }) => {
   };
 
   const viewAuditTrail = () => {
-    if (!selectedCase && !file) return;
+    if (!verificationResult.documentId) return;
     
-    const documentId = selectedCase ? selectedCase.case_id : `doc-${file.name.replace(/\s+/g, '-')}`;
-    const documentName = selectedCase ? selectedCase.title : file.name;
-    
-    // Use navigate to go to the BlockchainAudit page with query parameters
-    navigate(`/blockchain-audit?documentId=${encodeURIComponent(documentId)}&documentName=${encodeURIComponent(documentName)}`);
+    // Navigate to the document manager with the audit trail tab selected
+    navigate(`/documents?documentId=${encodeURIComponent(verificationResult.documentId)}&documentName=${encodeURIComponent(verificationResult.documentName || '')}&tab=audit-trail`);
   };
 
   return (
@@ -194,14 +188,24 @@ export const DocumentVerification = ({ selectedCase = null }) => {
           </div>
         )}
       </CardContent>
-      <CardFooter className={`flex justify-between gap-2 ${isMobile ? "px-4 py-4 flex-col" : ""}`}>
+      <CardFooter className={`${isMobile ? "px-4 py-4 flex-col" : ""}`}>
         {verificationResult.status && (
-          <Button onClick={viewAuditTrail} variant="outline" size={isMobile ? "sm" : "default"} className="text-sm">
+          <Button 
+            onClick={viewAuditTrail} 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"} 
+            className={`text-sm ${isMobile ? "w-full mb-2" : ""}`}
+          >
+            <History className="mr-2 h-4 w-4" />
             View Audit Trail
           </Button>
         )}
         {verificationResult.status === 'verified' && (
-          <Button variant="outline" size={isMobile ? "sm" : "default"} className={`text-sm ${isMobile ? "w-full" : "ml-auto"}`}>
+          <Button 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"} 
+            className={`text-sm ${isMobile ? "w-full" : "ml-auto"}`}
+          >
             Export Report
           </Button>
         )}

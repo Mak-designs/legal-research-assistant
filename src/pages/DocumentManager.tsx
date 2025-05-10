@@ -18,7 +18,6 @@ const DocumentManager = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isMobile } = useDeviceType();
-  const [activeTab, setActiveTab] = useState<string>("verification");
   
   // Get selected case from location state if available
   const selectedCase = location.state?.selectedCase || null;
@@ -29,8 +28,12 @@ const DocumentManager = () => {
   const documentName = searchParams.get('documentName') || selectedCase?.title || 'Smith v. Jones - Case Brief';
   
   // Set active tab based on query parameters
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') === 'audit-trail' ? 'audit-trail' : 'verification');
+  
   useEffect(() => {
-    if (searchParams.get('tab') === 'audit-trail') {
+    // Update active tab when URL search parameters change
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'audit-trail') {
       setActiveTab('audit-trail');
     }
   }, [location.search]);
