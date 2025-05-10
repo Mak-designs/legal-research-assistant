@@ -5,7 +5,7 @@ import { Clock } from "lucide-react";
 
 interface RecentBlockchainActivityProps {
   blocks: Block[];
-  formatDate: (isoString: string) => string;
+  formatDate: (isoString: string, options?: Intl.DateTimeFormatOptions) => string;
 }
 
 export const RecentBlockchainActivity: React.FC<RecentBlockchainActivityProps> = ({

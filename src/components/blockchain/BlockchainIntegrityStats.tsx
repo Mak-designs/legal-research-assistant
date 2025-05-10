@@ -7,7 +7,7 @@ interface BlockchainIntegrityStatsProps {
   isVerified: boolean | null;
   lastVerified: Date;
   latestBlock: Block | null;
-  formatDate: (isoString: string) => string;
+  formatDate: (isoString: string, options?: Intl.DateTimeFormatOptions) => string;
 }
 
 export const BlockchainIntegrityStats: React.FC<BlockchainIntegrityStatsProps> = ({

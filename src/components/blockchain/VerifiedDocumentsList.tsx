@@ -11,7 +11,7 @@ interface VerifiedDocument {
 
 interface VerifiedDocumentsListProps {
   documents: VerifiedDocument[];
-  formatDate: (isoString: string) => string;
+  formatDate: (isoString: string, options?: Intl.DateTimeFormatOptions) => string;
 }
 
 export const VerifiedDocumentsList: React.FC<VerifiedDocumentsListProps> = ({
