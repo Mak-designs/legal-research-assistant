@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Block, getAllBlocks, getLatestBlock, verifyBlockchain } from "@/utils/blockchainUtil";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, Search, ShieldCheck, Clock, Shield, FileCheck } from "lucide-react";
+import { Loader2, Download, Shield } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { VerifiedDocumentsList } from "./VerifiedDocumentsList";
+import { BlockchainIntegrityStats } from "./BlockchainIntegrityStats";
+import { RecentBlockchainActivity } from "./RecentBlockchainActivity";
+import { useDateFormat } from "@/hooks/use-date-format";
 
 export const SystemAuditDashboard: React.FC = () => {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -21,10 +24,8 @@ export const SystemAuditDashboard: React.FC = () => {
   const [lastVerified, setLastVerified] = useState<Date>(new Date());
   const [userEmail, setUserEmail] = useState<string | null>(null);
   
-  const {
-    isMobile,
-    isTablet
-  } = useDeviceType();
+  const { isMobile } = useDeviceType();
+  const { formatDate } = useDateFormat();
   
   // Get current user email on component mount
   useEffect(() => {
@@ -106,18 +107,6 @@ export const SystemAuditDashboard: React.FC = () => {
     }
   }, [userEmail]);
   
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-  
   const handleExportAudit = () => {
     // This would export the audit log in a real application
     toast.success("Audit log exported successfully");
@@ -160,94 +149,24 @@ export const SystemAuditDashboard: React.FC = () => {
         ) : (
           <>
             {/* Verified Documents Section */}
-            <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center">
-                <FileCheck className="h-4 w-4 mr-1" /> Your Verified Documents:
-              </h3>
-              
-              {verifiedDocuments.length > 0 ? (
-                <div className="space-y-3">
-                  {verifiedDocuments.map((doc, index) => (
-                    <div key={index} className="bg-muted/50 p-3 rounded-md flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{doc.documentName}</p>
-                        <p className="text-xs text-muted-foreground">{doc.documentId}</p>
-                        <p className="text-xs">Verified: {formatDate(doc.verifiedAt)}</p>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          window.location.href = `/documents?documentId=${encodeURIComponent(doc.documentId)}&documentName=${encodeURIComponent(doc.documentName)}&tab=audit-trail`;
-                        }}
-                      >
-                        View Trail
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 border border-dashed rounded-md">
-                  <p className="text-sm text-muted-foreground">No verified documents found</p>
-                  <p className="text-xs mt-1">Visit the Document Verification page to verify documents</p>
-                </div>
-              )}
-            </div>
+            <VerifiedDocumentsList 
+              documents={verifiedDocuments} 
+              formatDate={formatDate} 
+            />
             
             {/* Blockchain Stats */}
-            <div>
-              <h3 className="text-sm font-medium mb-3">Blockchain Integrity:</h3>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                <div className="bg-muted/50 p-3 rounded-md">
-                  <p className="text-xs text-muted-foreground">Status:</p>
-                  {isVerified !== null && (
-                    <div className="flex items-center mt-1">
-                      {isVerified ? (
-                        <>
-                          <ShieldCheck className="h-4 w-4 text-green-500 mr-1" />
-                          <span className="text-sm font-medium text-green-600">Verified</span>
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="h-4 w-4 text-red-500 mr-1" />
-                          <span className="text-sm font-medium text-red-600">Compromised</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <p className="text-xs mt-2">Last checked: {formatDate(lastVerified.toISOString())}</p>
-                </div>
-                
-                <div className="bg-muted/50 p-3 rounded-md">
-                  <p className="text-xs text-muted-foreground">Latest Block:</p>
-                  {latestBlock && (
-                    <div className="mt-1">
-                      <p className="text-xs font-mono">#{latestBlock.index}</p>
-                      <p className="text-xs font-mono truncate">{latestBlock.hash.substring(0, 16)}...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BlockchainIntegrityStats
+              isVerified={isVerified}
+              lastVerified={lastVerified}
+              latestBlock={latestBlock}
+              formatDate={formatDate}
+            />
             
             {/* Recent Activity */}
-            {blocks.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-3 flex items-center">
-                  <Clock className="h-4 w-4 mr-1" /> Recent Activity:
-                </h3>
-                <div className="space-y-2">
-                  {blocks.slice(0, 5).map((block, index) => (
-                    <div key={index} className="text-xs border-l-2 border-gray-300 pl-2 py-1">
-                      <p className="text-muted-foreground">{formatDate(block.timestamp)} - {block.data.type}</p>
-                      {block.data.documentName && (
-                        <p className="font-medium">{block.data.documentName}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <RecentBlockchainActivity 
+              blocks={blocks} 
+              formatDate={formatDate} 
+            />
           </>
         )}
       </CardContent>
