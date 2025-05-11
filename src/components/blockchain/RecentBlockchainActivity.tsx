@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Block } from "@/utils/blockchainUtil";
+import { Block } from "@/utils/blockchain/types";
 import { Clock } from "lucide-react";
 
 interface RecentBlockchainActivityProps {

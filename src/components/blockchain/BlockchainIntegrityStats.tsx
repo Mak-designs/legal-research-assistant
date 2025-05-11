@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Block } from "@/utils/blockchainUtil";
+import { Block } from "@/utils/blockchain/types";
 import { ShieldCheck, Shield } from "lucide-react";
 
 interface BlockchainIntegrityStatsProps {

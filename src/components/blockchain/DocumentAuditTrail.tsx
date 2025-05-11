@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Block, getDocumentBlocks, verifyBlockchain } from "@/utils/blockchainUtil";
+import { Block, getDocumentBlocks, verifyBlockchain } from "@/utils/blockchain";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileCheck, FileWarning, Download, History } from "lucide-react";
@@ -73,7 +73,7 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
           setBlocks(documentBlocks);
           
           // Verify blockchain integrity
-          const verification = verifyBlockchain();
+          const verification = verifyBlockchain(documentBlocks);
           setIsVerified(verification.valid);
           
           // Show toast when blocks are loaded successfully

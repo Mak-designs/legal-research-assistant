@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { toast } from "@/components/ui/sonner";
 import { ShieldCheck, ShieldX, Search, History } from "lucide-react";
 import { useDeviceType } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-import { recordDocumentEvent } from "@/utils/blockchainUtil";
+import { recordDocumentEvent } from "@/utils/blockchain";
 import { supabase } from "@/integrations/supabase/client";
 
 export const DocumentVerification = ({ selectedCase = null }) => {

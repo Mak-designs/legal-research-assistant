@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Block, getAllBlocks, getLatestBlock, verifyBlockchain } from "@/utils/blockchainUtil";
+import { Block, getAllBlocks, getLatestBlock, verifyBlockchain } from "@/utils/blockchain";
 import { Button } from "@/components/ui/button";
 import { Loader2, Download, Shield } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
@@ -90,7 +91,7 @@ export const SystemAuditDashboard: React.FC = () => {
         setLatestBlock(getLatestBlock());
 
         // Verify blockchain integrity
-        const verification = verifyBlockchain();
+        const verification = verifyBlockchain(allBlocks);
         setIsVerified(verification.valid);
         setLastVerified(new Date());
       } catch (error) {
@@ -115,7 +116,7 @@ export const SystemAuditDashboard: React.FC = () => {
   const handleVerifyChain = () => {
     try {
       // Re-verify the blockchain
-      const verification = verifyBlockchain();
+      const verification = verifyBlockchain(getAllBlocks());
       setIsVerified(verification.valid);
       setLastVerified(new Date());
       if (verification.valid) {

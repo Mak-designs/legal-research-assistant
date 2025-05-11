@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
-import { detectTampering } from "@/utils/blockchainUtil";
+import { detectTampering } from "@/utils/blockchain";
 
 export type VerificationResult = {
   tampered: boolean;
