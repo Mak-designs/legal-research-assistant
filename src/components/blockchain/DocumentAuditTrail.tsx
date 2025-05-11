@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Block, getDocumentBlocks, verifyBlockchain } from "@/utils/blockchain";
@@ -10,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+
 interface DocumentAuditTrailProps {
   documentId: string;
   documentName: string;
 }
+
 export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
   documentId,
   documentName
@@ -23,47 +26,59 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
-  const [userVerifiedDocuments, setUserVerifiedDocuments] = useState<string[]>([]);
-  const {
-    isMobile
-  } = useDeviceType();
+  const [verifiedDocuments, setVerifiedDocuments] = useState<{
+    documentId: string;
+    documentName: string;
+    verifiedAt: string;
+  }[]>([]);
+  const { isMobile } = useDeviceType();
   const navigate = useNavigate();
+
   useEffect(() => {
-    const fetchUserVerifications = async () => {
+    const fetchVerifiedDocuments = async () => {
       try {
-        const {
-          data: {
-            session
-          }
-        } = await supabase.auth.getSession();
-        if (!session || !session.user) return [];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session || !session.user) return;
 
-        // In a real implementation, we would fetch the user's verified documents from the database
-        // For now, we'll simulate this by looking for DOCUMENT_VERIFIED events by the current user
+        // In a real implementation, we would fetch all verified documents from the database
+        // For now, we'll get all blockchain blocks and filter for DOCUMENT_VERIFIED events by the current user
         const allBlocks = getDocumentBlocks(documentId);
-        const verifiedBlocks = allBlocks.filter(block => block.data.type === 'DOCUMENT_VERIFIED' && block.data.userEmail === session.user.email);
+        const verifiedBlocks = allBlocks.filter(
+          block => block.data.type === 'DOCUMENT_VERIFIED' && 
+          block.data.userEmail === session.user.email
+        );
 
-        // If the document has been verified by the current user, add it to the list
+        // If this document has been verified by the current user
         if (verifiedBlocks.length > 0) {
-          setUserVerifiedDocuments([documentId]);
+          // Map to the format expected by our state
+          const verified = verifiedBlocks.map(block => ({
+            documentId: block.data.documentId || '',
+            documentName: block.data.documentName || '',
+            verifiedAt: block.timestamp
+          }));
+
+          setVerifiedDocuments(verified);
         }
-        return verifiedBlocks.length > 0 ? [documentId] : [];
       } catch (error) {
-        console.error("Error fetching user verifications:", error);
-        return [];
+        console.error("Error fetching verified documents:", error);
       }
     };
+
     const fetchBlocks = async () => {
       try {
         setIsLoading(true);
         // Get blocks related to this document
         const documentBlocks = getDocumentBlocks(documentId);
+        
+        // Fetch verified documents for the current user
+        await fetchVerifiedDocuments();
+        
+        // Check if current document has been verified
+        const isDocVerified = documentBlocks.some(block => 
+          block.data.type === 'DOCUMENT_VERIFIED'
+        );
 
-        // Check if this document has been verified by the current user
-        const verified = await fetchUserVerifications();
-        const isDocVerified = verified.includes(documentId);
-
-        // Only show blocks if the document has been verified by the user
+        // Only show blocks if the document has verification records
         if (isDocVerified) {
           setBlocks(documentBlocks);
 
@@ -78,9 +93,9 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
             });
           }
         } else {
-          // If not verified by the user, show empty blocks
+          // If not verified, show empty blocks
           setBlocks([]);
-          toast.info("No verified documents found", {
+          toast.info("No verification records found", {
             description: "Only verified documents will show audit trails."
           });
         }
@@ -92,8 +107,10 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
         setIsLoading(false);
       }
     };
+    
     fetchBlocks();
   }, [documentId]);
+
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-US', {
@@ -105,14 +122,19 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
       second: '2-digit'
     });
   };
+
   const handleExportAudit = () => {
     // This would export the audit trail data in a real application
     toast.success("Audit trail exported successfully");
   };
+
   const viewBlockDetails = (block: Block) => {
     setSelectedBlock(block);
     setShowDetailsDialog(true);
   };
+
+  const isDocumentVerified = blocks.some(block => block.data.type === 'DOCUMENT_VERIFIED');
+
   return <>
       <Card className="shadow-sm">
         <CardHeader className={isMobile ? "px-4 py-4" : ""}>
@@ -128,7 +150,7 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
         <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
           {isLoading ? <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div> : userVerifiedDocuments.includes(documentId) ? blocks.length === 0 ? <div className="py-6 text-center text-muted-foreground">
+            </div> : isDocumentVerified ? blocks.length === 0 ? <div className="py-6 text-center text-muted-foreground">
                 No audit trail found for this document
               </div> : <>
                 <div className="flex items-center justify-between">
@@ -171,16 +193,26 @@ export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
               <FileWarning className="h-12 w-12 mx-auto text-amber-500 mb-4" />
               <h3 className="text-lg font-medium mb-2">Document Not Verified</h3>
               <p className="text-muted-foreground mb-4">
-                This document hasn't been verified by you yet. Only verified documents will display audit trails.
+                This document hasn't been verified yet. Only verified documents will display audit trails.
               </p>
-              <Button onClick={() => navigate(-1)} variant="outline" size="sm">
-                Back to Verification
+              <Button onClick={() => navigate("/documents")} variant="outline" size="sm">
+                Go to Document Verification
               </Button>
             </div>}
         </CardContent>
         
         <CardFooter className={isMobile ? "px-4 py-4" : ""}>
-          {blocks.length > 0 && userVerifiedDocuments.includes(documentId)}
+          {blocks.length > 0 && isDocumentVerified && (
+            <Button 
+              onClick={handleExportAudit} 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"}
+              className="flex items-center"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Audit Report
+            </Button>
+          )}
         </CardFooter>
       </Card>
       
