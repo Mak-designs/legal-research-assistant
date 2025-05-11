@@ -6,17 +6,33 @@
  * a blockchain-based immutable audit trail for legal documents.
  */
 
-// Re-export all types and functions from submodules
+// Re-export types from types.ts
 export * from './types';
-export * from './store';
+
+// Re-export specific functions from store module with renamed functions
+import { getAllBlocks, getLatestBlock, getDocumentBlocks, setBlockchain } from './store';
+export { getAllBlocks, getLatestBlock, getDocumentBlocks, setBlockchain };
+
+// Re-export store's addBlock with a different name to avoid conflict
+import { addBlock as storeAddBlock } from './store';
+export { storeAddBlock };
+
+// Re-export from crypto module
 export * from './crypto';
+
+// Re-export from mining module
 export * from './mining';
+
+// Re-export from core module (contains addBlock which will be the primary one used)
 export * from './core';
+
+// Re-export from audit module
 export * from './audit';
+
+// Re-export from tamper module
 export * from './tamper';
 
 // Import necessary functions to initialize sample data
-import { getAllBlocks } from './store';
 import { initBlockchain } from './core';
 import { recordDocumentEvent, recordSystemEvent } from './audit';
 
