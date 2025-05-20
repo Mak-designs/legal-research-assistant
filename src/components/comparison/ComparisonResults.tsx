@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,22 +5,27 @@ import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle } from "lucide-
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
 interface ComparisonResultsProps {
   results: any;
   apiStatus?: "available" | "quota_exceeded" | "error" | null;
 }
-
-const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatus }) => {
+const ComparisonResults: React.FC<ComparisonResultsProps> = ({
+  results,
+  apiStatus
+}) => {
   const handleSave = async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      const {
+        data: sessionData
+      } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast.error("Please sign in to save cases");
         return;
       }
-
-      const { data, error } = await supabase.from('saved_cases').insert({
+      const {
+        data,
+        error
+      } = await supabase.from('saved_cases').insert({
         case_id: `case-${Date.now()}`,
         title: results.query,
         court_name: "AI Analysis",
@@ -29,7 +33,6 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
         user_id: sessionData.session.user.id,
         decision_date: new Date().toISOString()
       }).select();
-
       if (error) throw error;
       toast.success("Case saved successfully!");
     } catch (error) {
@@ -37,21 +40,18 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
       toast.error("Failed to save case. Please try again.");
     }
   };
-
   const handleDelete = async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      const {
+        data: sessionData
+      } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast.error("Please sign in to delete cases");
         return;
       }
-
-      const { error } = await supabase
-        .from('saved_cases')
-        .delete()
-        .eq('title', results.query)
-        .eq('user_id', sessionData.session.user.id);
-
+      const {
+        error
+      } = await supabase.from('saved_cases').delete().eq('title', results.query).eq('user_id', sessionData.session.user.id);
       if (error) throw error;
       toast.success("Case deleted successfully!");
     } catch (error) {
@@ -59,19 +59,12 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
       toast.error("Failed to delete case. Please try again.");
     }
   };
-
   if (!results) return null;
 
   // Enhanced relevance detection
-  const isZambianLaw = results.domains?.includes('zambian') || 
-                       results.query?.toLowerCase().includes('zambia') || 
-                       results.query?.toLowerCase().includes('zambian');
-                      
-  const isDigitalEvidence = results.domains?.includes('cyberSecurity') ||
-                            results.technicalDetails !== undefined;
-                            
+  const isZambianLaw = results.domains?.includes('zambian') || results.query?.toLowerCase().includes('zambia') || results.query?.toLowerCase().includes('zambian');
+  const isDigitalEvidence = results.domains?.includes('cyberSecurity') || results.technicalDetails !== undefined;
   const isConstitutional = results.domains?.includes('constitutional');
-  
   const isCriminal = results.domains?.includes('criminal');
 
   // Format the recommendation with better styling if it's from the AI
@@ -80,17 +73,14 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
   // Format the case title for display
   const formatCaseDisplay = (caseText: string) => {
     if (!caseText) return "";
-    
+
     // Split by colon to separate title/citation from description
     const parts = caseText.split(": ");
     if (parts.length < 2) return caseText;
-    
-    return (
-      <div className="mb-2">
+    return <div className="mb-2">
         <div className="font-medium">{parts[0]}</div>
         <div className="text-sm text-slate-600">{parts[1]}</div>
-      </div>
-    );
+      </div>;
   };
 
   // Format domain names for display
@@ -104,22 +94,17 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
       'zambian': 'Zambian Law',
       'cyberSecurity': 'Cyber Security Law'
     };
-    
     return domainMap[domain] || domain.charAt(0).toUpperCase() + domain.slice(1);
   };
-
-  return (
-    <Card className="shadow-sm">
+  return <Card className="shadow-sm">
       <CardContent className="pt-6 space-y-4">
-        {apiStatus === "quota_exceeded" && (
-          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+        {apiStatus === "quota_exceeded" && <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               AI-powered analysis is currently limited due to API usage quotas. You're viewing our standard analysis instead. 
               For detailed analysis, please try again later.
             </AlertDescription>
-          </Alert>
-        )}
+          </Alert>}
 
         {/* Case header with query as title */}
         <div className="border-b pb-4">
@@ -133,21 +118,11 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Legal Analysis</h3>
           <div className="space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleSave}
-              className="text-green-600 hover:text-green-700"
-            >
+            <Button variant="outline" size="sm" onClick={handleSave} className="text-green-600 hover:text-green-700">
               <Save className="h-4 w-4 mr-1" />
               Save
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleDelete}
-              className="text-red-600 hover:text-red-700"
-            >
+            <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
             </Button>
@@ -156,23 +131,11 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
         
         {/* Domain badges */}
         <div className="flex flex-wrap gap-2">
-          {results.domains && results.domains.map((domain: string, index: number) => (
-            <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : 
-                domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' :
-                domain === 'constitutional' ? 'bg-purple-100 text-purple-800' :
-                domain === 'criminal' ? 'bg-red-100 text-red-800' :
-                domain === 'property' ? 'bg-amber-100 text-amber-800' :
-                domain === 'contract' ? 'bg-indigo-100 text-indigo-800' :
-                domain === 'tort' ? 'bg-orange-100 text-orange-800' :
-                'bg-gray-100 text-gray-800'}`}
-            >
-              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : 
-               domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> :
-               <BookOpen className="h-3 w-3 mr-1" />}
+          {results.domains && results.domains.map((domain: string, index: number) => <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' : domain === 'constitutional' ? 'bg-purple-100 text-purple-800' : domain === 'criminal' ? 'bg-red-100 text-red-800' : domain === 'property' ? 'bg-amber-100 text-amber-800' : domain === 'contract' ? 'bg-indigo-100 text-indigo-800' : domain === 'tort' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>
+              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> : <BookOpen className="h-3 w-3 mr-1" />}
               {getDomainDisplayName(domain)}
-            </div>
-          ))}
+            </div>)}
         </div>
 
         <div className="space-y-6">
@@ -204,21 +167,16 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
             <h4 className="font-medium text-lg mb-3">Relevant Case Law</h4>
             <div className="divide-y">
-              {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => (
-                <div key={index} className="py-3 first:pt-0 last:pb-0">
+              {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => <div key={index} className="py-3 first:pt-0 last:pb-0">
                   {formatCaseDisplay(example)}
-                </div>
-              ))}
-              {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => (
-                <div key={index} className="py-3">
+                </div>)}
+              {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => <div key={index} className="py-3">
                   {formatCaseDisplay(example)}
-                </div>
-              ))}
+                </div>)}
             </div>
           </div>
           
-          {isDigitalEvidence && (
-            <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
+          {isDigitalEvidence && <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
               <h4 className="font-medium mb-2 flex items-center">
                 <FileDigit className="h-4 w-4 mr-1 text-green-600" />
                 Digital Evidence Technical Analysis
@@ -228,20 +186,12 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({ results, apiStatu
                 View the "Detailed Analysis" tab for hash verification methods, chain of custody requirements, 
                 and integrity verification techniques that meet legal standards.
               </p>
-            </div>
-          )}
+            </div>}
           
           {/* Recommendation - with enhanced styling */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3 text-primary">Legal Opinion</h4>
-            <div className="prose max-w-none">
-              <p className="text-primary-700 whitespace-pre-line font-medium">{formattedRecommendation}</p>
-            </div>
-          </div>
+          
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default ComparisonResults;
