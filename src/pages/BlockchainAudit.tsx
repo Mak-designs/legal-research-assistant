@@ -121,7 +121,7 @@ const BlockchainAudit = () => {
               
               <TabsTrigger value="document">Document Trail</TabsTrigger>
               <TabsTrigger value="certificate" className="mx-[34px] px-[73px]">Generate Certificate</TabsTrigger>
-              <TabsTrigger value="tamper" className="px-[3px] mx-[220px]">Tamper Detection</TabsTrigger>
+              <TabsTrigger value="tamper" className="px-[3px] mx-[157px]">Tamper Detection</TabsTrigger>
             </TabsList>
             
             <TabsContent value="system" className="space-y-4">
