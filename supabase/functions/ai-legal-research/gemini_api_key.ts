@@ -15,7 +15,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
   if (!geminiApiKey) {
     console.error("Missing Gemini API key");
     return {
-      recommendation: "Unable to generate AI recommendation. Please check that the Gemini API key is configured.",
+
       primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
       secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
       error: "missing_api_key"
@@ -65,7 +65,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       // Handle quota exceeded error specifically
       if (response.status === 429 || data.error?.code === 429) {
         return {
-          recommendation: "The AI legal analysis service is currently unavailable due to API quota limitations. Please try again later or contact support to upgrade the API plan.",
+        
           primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
           secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
           error: "quota_exceeded"
@@ -110,7 +110,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
   } catch (error) {
     console.error("Error generating AI response:", error);
     return {
-      recommendation: "Error generating legal analysis. Our AI service is currently experiencing technical difficulties. Please try again later or use the standard analysis mode.",
+
       primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
       secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
       error: "api_error"
@@ -149,5 +149,5 @@ function generateFallbackAnalysis(domain: string, query: string): string {
   // Get the domain-specific content or use default
   const domainText = domainSpecificContent[domain as keyof typeof domainSpecificContent] || defaultText;
   
-  return `${domainText}\n\nNote: This is a standard analysis as our AI-powered detailed analysis is currently unavailable. Please refer to the case examples and statutes below for specific legal precedents related to your query.`;
+
 }
