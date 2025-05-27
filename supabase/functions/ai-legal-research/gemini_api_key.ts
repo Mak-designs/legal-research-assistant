@@ -1,6 +1,6 @@
 // Gemini integration module for legal research
 
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+/* const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
 /**
  * Generate AI-powered legal response using Google's Gemini
@@ -11,7 +11,7 @@ const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
  * @param jurisdiction The jurisdiction context (e.g., "zambian", "general")
  * @returns Legal analysis and recommendation
  */
-export async function generateAILegalResponse(query: string, primaryDomain: string, secondaryDomain: string, systemPrompt: string, jurisdiction: string) {
+/*export async function generateAILegalResponse(query: string, primaryDomain: string, secondaryDomain: string, systemPrompt: string, jurisdiction: string) {
   if (!geminiApiKey) {
     console.error("Missing Gemini API key");
     return {
@@ -124,7 +124,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
  * @param query The user's query
  * @returns A basic domain-specific analysis
  */
-function generateFallbackAnalysis(domain: string, query: string): string {
+/*function generateFallbackAnalysis(domain: string, query: string): string {
   const domainCapitalized = domain.charAt(0).toUpperCase() + domain.slice(1);
   
   const domainSpecificContent = {
