@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Block, getAllBlocks, getLatestBlock, verifyBlockchain } from "@/utils/blockchain";
@@ -11,7 +10,6 @@ import { VerifiedDocumentsList } from "./VerifiedDocumentsList";
 import { BlockchainIntegrityStats } from "./BlockchainIntegrityStats";
 import { RecentBlockchainActivity } from "./RecentBlockchainActivity";
 import { useDateFormat } from "@/hooks/use-date-format";
-
 export const SystemAuditDashboard: React.FC = () => {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [verifiedDocuments, setVerifiedDocuments] = useState<{
@@ -24,15 +22,22 @@ export const SystemAuditDashboard: React.FC = () => {
   const [latestBlock, setLatestBlock] = useState<Block | null>(null);
   const [lastVerified, setLastVerified] = useState<Date>(new Date());
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  
-  const { isMobile } = useDeviceType();
-  const { formatDate } = useDateFormat();
-  
+  const {
+    isMobile
+  } = useDeviceType();
+  const {
+    formatDate
+  } = useDateFormat();
+
   // Get current user email on component mount
   useEffect(() => {
     const fetchUserEmail = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: {
+            session
+          }
+        } = await supabase.auth.getSession();
         if (session && session.user) {
           setUserEmail(session.user.email || null);
         }
@@ -40,33 +45,24 @@ export const SystemAuditDashboard: React.FC = () => {
         console.error("Error fetching user session:", error);
       }
     };
-    
     fetchUserEmail();
   }, []);
-  
   useEffect(() => {
     const fetchBlocks = async () => {
       try {
         setIsLoading(true);
-        
+
         // Get all blocks and sort by most recent
-        const allBlocks = getAllBlocks().sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        const allBlocks = getAllBlocks().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
         // Get only verified documents for the current user
         if (userEmail) {
-          const verifiedDocs = allBlocks
-            .filter(block => 
-              block.data.type === 'DOCUMENT_VERIFIED' && 
-              block.data.userEmail === userEmail
-            )
-            .map(block => ({
-              documentId: block.data.documentId || '',
-              documentName: block.data.documentName || '',
-              verifiedAt: block.timestamp
-            }));
-          
+          const verifiedDocs = allBlocks.filter(block => block.data.type === 'DOCUMENT_VERIFIED' && block.data.userEmail === userEmail).map(block => ({
+            documentId: block.data.documentId || '',
+            documentName: block.data.documentName || '',
+            verifiedAt: block.timestamp
+          }));
+
           // Remove duplicates (only keep latest verification per document)
           const uniqueDocs = verifiedDocs.reduce((acc, current) => {
             const x = acc.find(item => item.documentId === current.documentId);
@@ -76,15 +72,11 @@ export const SystemAuditDashboard: React.FC = () => {
               return acc;
             }
           }, [] as typeof verifiedDocs);
-          
           setVerifiedDocuments(uniqueDocs);
         }
 
         // For display, limit to most recent blocks that belong to the current user
-        const userBlocks = userEmail 
-          ? allBlocks.filter(block => block.data.userEmail === userEmail)
-          : [];
-          
+        const userBlocks = userEmail ? allBlocks.filter(block => block.data.userEmail === userEmail) : [];
         setBlocks(userBlocks.slice(0, 10));
 
         // Get latest block
@@ -102,17 +94,14 @@ export const SystemAuditDashboard: React.FC = () => {
         setIsLoading(false);
       }
     };
-    
     if (userEmail) {
       fetchBlocks();
     }
   }, [userEmail]);
-  
   const handleExportAudit = () => {
     // This would export the audit log in a real application
     toast.success("Audit log exported successfully");
   };
-  
   const handleVerifyChain = () => {
     try {
       // Re-verify the blockchain
@@ -129,9 +118,7 @@ export const SystemAuditDashboard: React.FC = () => {
       toast.error("Failed to verify blockchain integrity");
     }
   };
-  
-  return (
-    <Card className="shadow-sm">
+  return <Card className="shadow-sm">
       <CardHeader className={isMobile ? "px-4 py-4" : ""}>
         <CardTitle className="text-lg sm:text-xl flex items-center">
           <Shield className="h-5 w-5 mr-2 text-primary" />
@@ -143,58 +130,24 @@ export const SystemAuditDashboard: React.FC = () => {
       </CardHeader>
       
       <CardContent className={`space-y-6 ${isMobile ? "px-4" : ""}`}>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
+        {isLoading ? <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
+          </div> : <>
             {/* Verified Documents Section */}
-            <VerifiedDocumentsList 
-              documents={verifiedDocuments} 
-              formatDate={formatDate} 
-            />
+            <VerifiedDocumentsList documents={verifiedDocuments} formatDate={formatDate} />
             
             {/* Blockchain Stats */}
-            <BlockchainIntegrityStats
-              isVerified={isVerified}
-              lastVerified={lastVerified}
-              latestBlock={latestBlock}
-              formatDate={formatDate}
-            />
+            <BlockchainIntegrityStats isVerified={isVerified} lastVerified={lastVerified} latestBlock={latestBlock} formatDate={formatDate} />
             
             {/* Recent Activity */}
-            <RecentBlockchainActivity 
-              blocks={blocks} 
-              formatDate={formatDate} 
-            />
-          </>
-        )}
+            <RecentBlockchainActivity blocks={blocks} formatDate={formatDate} />
+          </>}
       </CardContent>
       
       <CardFooter className={`${isMobile ? "px-4 py-4 flex-col space-y-2" : "space-x-2"}`}>
-        <Button 
-          variant="outline" 
-          size={isMobile ? "sm" : "default"}
-          onClick={handleVerifyChain}
-          className="flex items-center"
-        >
-          <Shield className="mr-2 h-4 w-4" />
-          Verify Blockchain
-        </Button>
         
-        {blocks.length > 0 && (
-          <Button
-            variant="outline"
-            size={isMobile ? "sm" : "default"}
-            onClick={handleExportAudit}
-            className={`flex items-center ${isMobile ? "w-full" : ""}`}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export Audit Log
-          </Button>
-        )}
+        
+        {blocks.length > 0}
       </CardFooter>
-    </Card>
-  );
+    </Card>;
 };
