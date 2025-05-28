@@ -164,17 +164,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
           </div>
           
           {/* Case examples section */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3">Relevant Case Law</h4>
-            <div className="divide-y">
-              {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => <div key={index} className="py-3 first:pt-0 last:pb-0">
-                  {formatCaseDisplay(example)}
-                </div>)}
-              {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => <div key={index} className="py-3">
-                  {formatCaseDisplay(example)}
-                </div>)}
-            </div>
-          </div>
+          
           
           {isDigitalEvidence && <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
               <h4 className="font-medium mb-2 flex items-center">
