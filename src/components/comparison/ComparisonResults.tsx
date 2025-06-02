@@ -28,7 +28,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
       } = await supabase.from('saved_cases').insert({
         case_id: `case-${Date.now()}`,
         title: results.query,
-        court_name: "AI Analysis",
+        court_name: "Court Analysis",
         notes: JSON.stringify(results),
         user_id: sessionData.session.user.id,
         decision_date: new Date().toISOString()
@@ -110,7 +110,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
         <div className="border-b pb-4">
           <h2 className="text-xl font-semibold">{results.query}</h2>
           <div className="flex flex-wrap gap-2 mt-2">
-            <div className="text-sm text-gray-500">Court: AI Analysis</div>
+            <div className="text-sm text-gray-500">Court Analysis</div>
             <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
           </div>
         </div>
