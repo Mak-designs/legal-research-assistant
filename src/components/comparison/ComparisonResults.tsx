@@ -5,10 +5,12 @@ import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle } from "lucide-
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
 interface ComparisonResultsProps {
   results: any;
   apiStatus?: "available" | "quota_exceeded" | "error" | null;
 }
+
 const ComparisonResults: React.FC<ComparisonResultsProps> = ({
   results,
   apiStatus
@@ -59,6 +61,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
       toast.error("Failed to delete case. Please try again.");
     }
   };
+
   if (!results) return null;
 
   // Enhanced relevance detection
@@ -96,6 +99,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
     };
     return domainMap[domain] || domain.charAt(0).toUpperCase() + domain.slice(1);
   };
+
   return <Card className="shadow-sm">
       <CardContent className="pt-6 space-y-4">
         {apiStatus === "quota_exceeded" && <Alert variant="destructive" className="bg-amber-50 border-amber-200">
@@ -163,9 +167,6 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </div>
           </div>
           
-          {/* Case examples section */}
-          
-          
           {isDigitalEvidence && <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
               <h4 className="font-medium mb-2 flex items-center">
                 <FileDigit className="h-4 w-4 mr-1 text-green-600" />
@@ -177,11 +178,9 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
                 and integrity verification techniques that meet legal standards.
               </p>
             </div>}
-          
-          {/* Recommendation - with enhanced styling */}
-          
         </div>
       </CardContent>
     </Card>;
 };
+
 export default ComparisonResults;
