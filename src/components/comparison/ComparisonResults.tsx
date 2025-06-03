@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle } from "lucide-react";
+import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle, Scale, Users } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -69,6 +69,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
   const isDigitalEvidence = results.domains?.includes('cyberSecurity') || results.technicalDetails !== undefined;
   const isConstitutional = results.domains?.includes('constitutional');
   const isCriminal = results.domains?.includes('criminal');
+  const isComparison = results.comparisonCriteria?.jurisdictions?.length > 1 || results.query?.toLowerCase().includes('compare');
 
   // Format the recommendation with better styling if it's from the AI
   const formattedRecommendation = results.aiResponse?.recommendation || results.recommendation;
@@ -110,12 +111,18 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </AlertDescription>
           </Alert>}
 
-        {/* Case header with query as title */}
+        {/* Enhanced case header with comparison context */}
         <div className="border-b pb-4">
           <h2 className="text-xl font-semibold">{results.query}</h2>
           <div className="flex flex-wrap gap-2 mt-2">
-            <div className="text-sm text-gray-500">Court Analysis</div>
+            <div className="text-sm text-gray-500">Dynamic Legal Analysis</div>
             <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
+            {isComparison && (
+              <div className="inline-flex items-center text-sm text-blue-600">
+                <Scale className="h-3 w-3 mr-1" />
+                Comparative Analysis
+              </div>
+            )}
           </div>
         </div>
         
@@ -133,20 +140,57 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
           </div>
         </div>
         
-        {/* Domain badges */}
+        {/* Enhanced domain badges with comparison context */}
         <div className="flex flex-wrap gap-2">
-          {results.domains && results.domains.map((domain: string, index: number) => <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' : domain === 'constitutional' ? 'bg-purple-100 text-purple-800' : domain === 'criminal' ? 'bg-red-100 text-red-800' : domain === 'property' ? 'bg-amber-100 text-amber-800' : domain === 'contract' ? 'bg-indigo-100 text-indigo-800' : domain === 'tort' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>
-              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> : <BookOpen className="h-3 w-3 mr-1" />}
+          {results.domains && results.domains.map((domain: string, index: number) => (
+            <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : 
+                domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' : 
+                domain === 'constitutional' ? 'bg-purple-100 text-purple-800' : 
+                domain === 'criminal' ? 'bg-red-100 text-red-800' : 
+                domain === 'property' ? 'bg-amber-100 text-amber-800' : 
+                domain === 'contract' ? 'bg-indigo-100 text-indigo-800' : 
+                domain === 'tort' ? 'bg-orange-100 text-orange-800' : 
+                'bg-gray-100 text-gray-800'}`}>
+              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : 
+               domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> : 
+               <BookOpen className="h-3 w-3 mr-1" />}
               {getDomainDisplayName(domain)}
-            </div>)}
+            </div>
+          ))}
+          
+          {/* Show comparison criteria badges */}
+          {results.comparisonCriteria?.jurisdictions && results.comparisonCriteria.jurisdictions.length > 1 && (
+            <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              <Users className="h-3 w-3 mr-1" />
+              {results.comparisonCriteria.jurisdictions.join(' vs ')}
+            </div>
+          )}
+          
+          {results.comparisonCriteria?.comparisonType && results.comparisonCriteria.comparisonType !== 'general' && (
+            <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              <Scale className="h-3 w-3 mr-1" />
+              {results.comparisonCriteria.comparisonType}
+            </div>
+          )}
         </div>
 
+        {/* Dynamic documents found indicator */}
+        {results.dynamicDocuments && results.dynamicDocuments.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center text-sm text-green-800">
+              <FileDigit className="h-4 w-4 mr-2" />
+              <span className="font-medium">Dynamic Analysis:</span>
+              <span className="ml-1">Found {results.dynamicDocuments.length} relevant legal authorities</span>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6">
-          {/* Primary domain analysis */}
+          {/* Primary domain analysis with enhanced context */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
             <h4 className="font-medium text-lg mb-3">
-              {getDomainDisplayName(results.domains?.[0])} Analysis
+              {isComparison ? 'Primary Jurisdiction Analysis' : getDomainDisplayName(results.domains?.[0])} Analysis
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-800 whitespace-pre-line leading-relaxed">
@@ -155,10 +199,10 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </div>
           </div>
           
-          {/* Secondary domain analysis */}
+          {/* Secondary domain analysis with enhanced context */}
           <div className="bg-white border border-slate-200 rounded-lg p-5">
             <h4 className="font-medium text-lg mb-3">
-              {getDomainDisplayName(results.domains?.[1])} Perspective
+              {isComparison ? 'Secondary Jurisdiction Analysis' : getDomainDisplayName(results.domains?.[1])} Perspective
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-700 whitespace-pre-line leading-relaxed">
@@ -167,7 +211,25 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </div>
           </div>
           
-          {isDigitalEvidence && <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
+          {/* Show comparison insights if it's a comparative query */}
+          {isComparison && results.comparisonCriteria && (
+            <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+              <h4 className="font-medium mb-2 flex items-center">
+                <Scale className="h-4 w-4 mr-1 text-blue-600" />
+                Comparative Analysis Insights
+              </h4>
+              <div className="text-sm space-y-1">
+                {results.comparisonCriteria.specificAspects?.length > 0 && (
+                  <p><span className="font-medium">Specific aspects compared:</span> {results.comparisonCriteria.specificAspects.join(', ')}</p>
+                )}
+                <p><span className="font-medium">Analysis type:</span> {results.comparisonCriteria.comparisonType}</p>
+                <p><span className="font-medium">Legal domains:</span> {results.comparisonCriteria.legalDomains?.join(', ') || 'General law'}</p>
+              </div>
+            </div>
+          )}
+          
+          {isDigitalEvidence && (
+            <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
               <h4 className="font-medium mb-2 flex items-center">
                 <FileDigit className="h-4 w-4 mr-1 text-green-600" />
                 Digital Evidence Technical Analysis
@@ -177,7 +239,8 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
                 View the "Detailed Analysis" tab for hash verification methods, chain of custody requirements, 
                 and integrity verification techniques that meet legal standards.
               </p>
-            </div>}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>;
