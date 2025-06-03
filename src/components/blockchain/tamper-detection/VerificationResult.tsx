@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ShieldCheck, ShieldAlert, RotateCcw, Clock } from "lucide-react";
 import type { VerificationResult } from "@/hooks/use-tamper-detection";
 
 interface VerificationResultProps {
@@ -19,104 +20,135 @@ export const VerificationResultDisplay: React.FC<VerificationResultProps> = ({
     const date = new Date(isoString);
     return date.toLocaleString('en-US', { 
       year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      month: 'long',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      timeZoneName: 'short'
     });
   };
 
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'text-red-600';
+      case 'low': return 'text-orange-600';
+      default: return 'text-green-600';
+    }
+  };
+
+  const getSeverityEmoji = (severity: string) => {
+    switch (severity) {
+      case 'high': return '🔴';
+      case 'low': return '🟠';
+      default: return '✅';
+    }
+  };
+
   return (
-    <div>
-      <div className={`mb-6 p-4 rounded-md border ${
+    <div className="space-y-6">
+      {/* Status Summary */}
+      <Card className={`${
         result.match 
           ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900' 
           : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-900'
       }`}>
-        <div className="flex flex-col sm:flex-row sm:items-center mb-4">
-          <div className="flex items-center">
-            {result.match ? (
-              <ShieldCheck className="h-8 w-8 text-green-600 mr-2" />
-            ) : (
-              <ShieldAlert className="h-8 w-8 text-red-600 mr-2" />
-            )}
-            <div>
-              <h3 className="text-base sm:text-lg font-medium">
-                {result.match ? 'DOCUMENT VERIFICATION RESULT' : '⚠️ DOCUMENT TAMPERING DETECTED ⚠️'}
-              </h3>
-              <p className="text-sm">Document: {documentName}</p>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              {result.match ? (
+                <ShieldCheck className="h-8 w-8 text-green-600" />
+              ) : (
+                <ShieldAlert className="h-8 w-8 text-red-600" />
+              )}
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {result.match ? '🔍 Tamper Detection' : '⚠️ DOCUMENT TAMPERING DETECTED'}
+                </h3>
+                <p className="text-sm text-muted-foreground">Document: {documentName}</p>
+              </div>
             </div>
           </div>
-          <div className="mt-2 sm:mt-0 sm:ml-auto">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              result.match ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              Status: {result.match ? '✓ VERIFIED' : '⛔ MODIFIED'}
-            </span>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <p className="text-sm font-medium mb-1">✅ Status:</p>
+              <p className="text-sm">{result.summary}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">Severity:</p>
+              <p className={`text-sm font-medium ${getSeverityColor(result.severity || 'none')}`}>
+                {getSeverityEmoji(result.severity || 'none')} {(result.severity || 'none').charAt(0).toUpperCase() + (result.severity || 'none').slice(1)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">🕓 Last Checked:</p>
+              <p className="text-sm">{formatDate(result.timestamp || '')}</p>
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Original Hash:</p>
-            <p className="text-xs font-mono break-all bg-black/80 text-white p-2 rounded">
-              {result.originalHash} (registered {formatDate(result.timestamp || '')})
-            </p>
+
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Original Hash:</p>
+              <p className="text-xs font-mono break-all bg-black/80 text-white p-2 rounded">
+                {result.originalHash}
+              </p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Current Hash:</p>
+              <p className="text-xs font-mono break-all bg-black/80 text-white p-2 rounded">
+                {result.currentHash}
+              </p>
+            </div>
           </div>
-          
-          <div>
-            <p className="text-xs text-muted-foreground">Current Hash:</p>
-            <p className="text-xs font-mono break-all bg-black/80 text-white p-2 rounded">
-              {result.currentHash} (calculated {formatDate(new Date().toISOString())})
-            </p>
-          </div>
-        </div>
-        
-        {result.match ? (
-          <div className="mt-4 flex items-center">
-            <ShieldCheck className="h-4 w-4 text-green-600 mr-2" />
-            <p className="text-sm">
-              This document matches exactly with the registered version. No tampering detected.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Modification details:</h4>
-            <div className="space-y-3">
-              {result.sections?.map((section, index) => (
-                <div key={index} className="text-sm">
-                  <p className="font-medium">{section.name}</p>
-                  <div className="pl-3 border-l-2 border-red-300 mt-1 space-y-1">
-                    <p className="text-xs">
-                      <span className="font-medium">Original:</span> "{section.original}"
-                    </p>
-                    <p className="text-xs">
-                      <span className="font-medium">Current:</span> "{section.current}"
-                    </p>
+        </CardContent>
+      </Card>
+
+      {/* Detailed Changes */}
+      {!result.match && result.sections && result.sections.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="text-lg font-semibold mb-4">Detailed Changes Found</h4>
+            <div className="space-y-4">
+              {result.sections.map((section, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h5 className="font-medium mb-2">{section.name}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {section.original && (
+                      <div>
+                        <p className="text-xs font-medium text-red-600 mb-1">❌ Removed:</p>
+                        <div className="bg-red-50 border border-red-200 p-2 rounded text-xs">
+                          "{section.original}"
+                        </div>
+                      </div>
+                    )}
+                    {section.current && (
+                      <div>
+                        <p className="text-xs font-medium text-green-600 mb-1">✅ Added:</p>
+                        <div className="bg-green-50 border border-green-200 p-2 rounded text-xs">
+                          "{section.current}"
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-            
-            <div className="mt-4 text-xs space-y-1">
-              <p>This document does NOT match the registered version.</p>
-              <p>Timestamp of original document: {formatDate(result.timestamp || '')}</p>
-              {result.lastAccess && (
-                <p>Last access before modification: {formatDate(result.lastAccess.date)} by {result.lastAccess.user}</p>
-              )}
-            </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reset Button */}
+      <div className="flex justify-center">
+        <Button 
+          onClick={onReset}
+          variant="outline"
+          className="px-8"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          🔄 Reset
+        </Button>
       </div>
-      
-      <Button 
-        onClick={onReset}
-        variant="outline"
-        className="w-full mb-4"
-      >
-        Verify Another Document
-      </Button>
     </div>
   );
 };

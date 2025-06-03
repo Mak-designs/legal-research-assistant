@@ -20,14 +20,15 @@ export const DocumentTamperDetection: React.FC = () => {
   const {
     documentName,
     setDocumentName,
-    originalContent,
-    setOriginalContent,
-    currentContent,
-    setCurrentContent,
+    originalFile,
+    currentFile,
     isVerifying,
     verificationResult,
     handleVerify,
-    handleReset
+    handleReset,
+    handleOriginalFileUpload,
+    handleCurrentFileUpload,
+    loadVerifiedDocument
   } = useTamperDetection();
 
   return (
@@ -35,7 +36,7 @@ export const DocumentTamperDetection: React.FC = () => {
       <CardHeader className={isMobile ? "px-4 py-4" : ""}>
         <CardTitle className="text-lg sm:text-xl flex items-center">
           <FileWarning className="h-5 w-5 mr-2 text-primary" />
-          Document Tamper Detection
+          🔍 Tamper Detection
         </CardTitle>
         <CardDescription>
           Verify document integrity and detect unauthorized changes
@@ -47,12 +48,12 @@ export const DocumentTamperDetection: React.FC = () => {
           <TamperDetectionForm 
             documentName={documentName}
             setDocumentName={setDocumentName}
-            originalContent={originalContent}
-            setOriginalContent={setOriginalContent}
-            currentContent={currentContent}
-            setCurrentContent={setCurrentContent}
+            originalFile={originalFile}
+            currentFile={currentFile}
             isVerifying={isVerifying}
             onVerify={handleVerify}
+            onOriginalFileUpload={handleOriginalFileUpload}
+            onCurrentFileUpload={handleCurrentFileUpload}
           />
         ) : (
           <VerificationResultDisplay 
