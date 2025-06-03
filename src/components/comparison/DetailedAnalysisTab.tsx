@@ -1,12 +1,9 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark, Globe } from "lucide-react";
-
 interface DetailedAnalysisTabProps {
   results: any;
 }
-
 const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
   results
 }) => {
@@ -22,7 +19,6 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
     zambian: "Zambian Law",
     cyberSecurity: "Cyber Security & Digital Evidence"
   };
-  
   const primaryDomainName = domainDisplayNames[results.domains?.[0]] || results.domains?.[0];
   const secondaryDomainName = domainDisplayNames[results.domains?.[1]] || results.domains?.[1];
 
@@ -49,24 +45,19 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
   };
 
   // Use AI analysis if available, otherwise fall back to the default analysis
-  const primaryAnalysis = results.aiResponse?.primaryAnalysis || results.comparison?.commonLaw?.analysis;
-  const secondaryAnalysis = results.aiResponse?.secondaryAnalysis || results.comparison?.contractLaw?.analysis;
-  
-  // Safe access to comparison data with fallbacks
-  const primaryComparison = results.comparison?.commonLaw;
-  const secondaryComparison = results.comparison?.contractLaw;
-
-  return (
-    <Card>
+  const primaryAnalysis = results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis;
+  const secondaryAnalysis = results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis;
+  return <Card>
       <CardContent className="pt-6 space-y-4">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">Query</h3>
           <p className="text-muted-foreground">{results.query}</p>
         </div>
         
+        
+        
         {/* Display technical details for digital evidence if available */}
-        {results.technicalDetails && (
-          <div className="space-y-4 border p-4 rounded-md bg-slate-50">
+        {results.technicalDetails && <div className="space-y-4 border p-4 rounded-md bg-slate-50">
             <h3 className="text-xl font-semibold flex items-center">
               <Shield className="mr-2 h-5 w-5 text-primary" />
               Technical Verification Details
@@ -78,12 +69,10 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
                 Hashing Techniques
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {results.technicalDetails.hashingTechniques?.map((technique, index) => (
-                  <div key={index} className="border p-2 rounded bg-white">
+                {results.technicalDetails.hashingTechniques?.map((technique, index) => <div key={index} className="border p-2 rounded bg-white">
                     <p className="font-medium">{technique.algorithm}</p>
                     <p className="text-sm text-muted-foreground">{technique.description}</p>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
             
@@ -101,12 +90,10 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {results.technicalDetails.chainOfCustody?.map((step, index) => (
-                      <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                    {results.technicalDetails.chainOfCustody?.map((step, index) => <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                         <td className="border px-4 py-2">{step.step}</td>
                         <td className="border px-4 py-2">{step.requirements}</td>
-                      </tr>
-                    ))}
+                      </tr>)}
                   </tbody>
                 </table>
               </div>
@@ -118,115 +105,74 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
                 {results.technicalDetails.integrityVerification}
               </div>
             </div>
-          </div>
-        )}
+          </div>}
         
-        {/* Primary Domain Analysis */}
-        {primaryAnalysis && (
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold flex items-center">
-              {getDomainIcon(results.domains?.[0])}
-              {primaryDomainName} Analysis
-            </h3>
-            <div className="prose max-w-none">
-              <p className="whitespace-pre-line">{primaryAnalysis}</p>
-            </div>
-            
-            {primaryComparison?.principles && (
-              <>
-                <h4 className="text-lg font-medium mt-2">Key Principles</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  {primaryComparison.principles.map((principle: string, index: number) => (
-                    <li key={index} className="text-sm">{principle}</li>
-                  )).slice(0, 4)}
-                </ul>
-              </>
-            )}
-            
-            {primaryComparison?.caseExamples && (
-              <>
-                <h4 className="text-lg font-medium mt-3 flex items-center">
-                  <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-                  Relevant Cases
-                </h4>
-                <ul className="list-disc list-inside space-y-1.5">
-                  {primaryComparison.caseExamples.map((example: string, index: number) => (
-                    <li key={index} className="text-sm">{example}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            
-            {primaryComparison?.statutes && (
-              <>
-                <h4 className="text-lg font-medium mt-3 flex items-center">
-                  <Book className="mr-2 h-4 w-4 text-muted-foreground" />
-                  Relevant Statutes
-                </h4>
-                <ul className="list-disc list-inside space-y-1.5">
-                  {primaryComparison.statutes.map((statute: string, index: number) => (
-                    <li key={index} className="text-sm">{statute}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold flex items-center">
+            {getDomainIcon(results.domains?.[0])}
+            {primaryDomainName} Analysis
+          </h3>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-line">{primaryAnalysis}</p>
           </div>
-        )}
+          
+          {results.comparison.commonLaw.principles && <>
+              <h4 className="text-lg font-medium mt-2">Key Principles</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {results.comparison.commonLaw.principles.map((principle: string, index: number) => <li key={index} className="text-sm">{principle}</li>).slice(0, 4)}
+              </ul>
+            </>}
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
+            <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+            Relevant Cases
+          </h4>
+          <ul className="list-disc list-inside space-y-1.5">
+            {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
+          </ul>
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
+            <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+            Relevant Statutes
+          </h4>
+          <ul className="list-disc list-inside space-y-1.5">
+            {results.comparison.commonLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
+          </ul>
+        </div>
         
-        {/* Secondary Domain Analysis - only show if exists and is different */}
-        {secondaryAnalysis && results.domains?.[1] && results.domains[1] !== results.domains[0] && (
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold flex items-center">
-              {getDomainIcon(results.domains?.[1])}
-              {secondaryDomainName} Analysis
-            </h3>
-            <div className="prose max-w-none">
-              <p className="whitespace-pre-line">{secondaryAnalysis}</p>
-            </div>
-            
-            {secondaryComparison?.principles && (
-              <>
-                <h4 className="text-lg font-medium mt-2">Key Principles</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  {secondaryComparison.principles.map((principle: string, index: number) => (
-                    <li key={index} className="text-sm">{principle}</li>
-                  )).slice(0, 4)}
-                </ul>
-              </>
-            )}
-            
-            {secondaryComparison?.caseExamples && (
-              <>
-                <h4 className="text-lg font-medium mt-3 flex items-center">
-                  <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-                  Relevant Cases
-                </h4>
-                <ul className="list-disc list-inside space-y-1.5">
-                  {secondaryComparison.caseExamples.map((example: string, index: number) => (
-                    <li key={index} className="text-sm">{example}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            
-            {secondaryComparison?.statutes && (
-              <>
-                <h4 className="text-lg font-medium mt-3 flex items-center">
-                  <Book className="mr-2 h-4 w-4 text-muted-foreground" />
-                  Relevant Statutes
-                </h4>
-                <ul className="list-disc list-inside space-y-1.5">
-                  {secondaryComparison.statutes.map((statute: string, index: number) => (
-                    <li key={index} className="text-sm">{statute}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold flex items-center">
+            {getDomainIcon(results.domains?.[1])}
+            {secondaryDomainName} Analysis
+          </h3>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-line">{secondaryAnalysis}</p>
           </div>
-        )}
+          
+          {results.comparison.contractLaw.principles && <>
+              <h4 className="text-lg font-medium mt-2">Key Principles</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {results.comparison.contractLaw.principles.map((principle: string, index: number) => <li key={index} className="text-sm">{principle}</li>).slice(0, 4)}
+              </ul>
+            </>}
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
+            <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+            Relevant Cases
+          </h4>
+          <ul className="list-disc list-inside space-y-1.5">
+            {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
+          </ul>
+          
+          <h4 className="text-lg font-medium mt-3 flex items-center">
+            <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+            Relevant Statutes
+          </h4>
+          <ul className="list-disc list-inside space-y-1.5">
+            {results.comparison.contractLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
+          </ul>
+        </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default DetailedAnalysisTab;

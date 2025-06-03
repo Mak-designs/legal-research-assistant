@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,10 +87,8 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
       </div>;
   };
 
-  // Format domain names for display - Fixed to handle undefined domains
-  const getDomainDisplayName = (domain: string | undefined) => {
-    if (!domain) return "General Law";
-    
+  // Format domain names for display
+  const getDomainDisplayName = (domain: string) => {
     const domainMap: Record<string, string> = {
       'contract': 'Contract Law',
       'property': 'Property Law',
@@ -197,7 +194,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-800 whitespace-pre-line leading-relaxed">
-                {results.aiResponse?.primaryAnalysis || results.comparison?.commonLaw?.analysis || "Analysis not available"}
+                {results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}
               </p>
             </div>
           </div>
@@ -209,7 +206,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-700 whitespace-pre-line leading-relaxed">
-                {results.aiResponse?.secondaryAnalysis || results.comparison?.contractLaw?.analysis || "Analysis not available"}
+                {results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}
               </p>
             </div>
           </div>
