@@ -1,15 +1,15 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { analyzeQuery } from "./analyzeQuery.ts";
 import { legalDataset } from "./legalDataset.ts";
 import { findRelevantCases, findRelevantStatutes, extractRelevantPrinciples } from "./relevance.ts";
-import { generateAILegalResponse } from "./openai.ts";
+import { generateImprovedLegalResponse } from "./improved-openai.ts";
 import { buildSystemPrompt } from "./promptBuilder.ts";
 import { analyzeUserQuestion, QuestionAnalysis } from "./nlp-utils.ts";
 import { performSemanticSearch, extractRelevantPassages, generateContextualAnswer } from "./semantic-search.ts";
 import { extractComparisonCriteria, generateComparisonPrompt } from "./comparison-analyzer.ts";
 import { retrieveComparisonDocuments, mergeComparisonResults } from "./dynamic-retrieval.ts";
+import { performHybridSearch } from "./hybrid-search.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -41,7 +41,17 @@ serve(async (req) => {
     
     console.log(`Final domains: Primary: ${primaryDomain}, Secondary: ${secondaryDomain}`);
 
-    // Retrieve documents for dynamic comparison
+    // Use hybrid search for better retrieval
+    const hybridResults = performHybridSearch(questionAnalysis, legalDataset, {
+      semanticWeight: 0.7,
+      keywordWeight: 0.3,
+      maxResults: 8,
+      minRelevanceScore: 0.3
+    });
+    
+    console.log(`Hybrid search found ${hybridResults.length} relevant documents`);
+
+    // Retrieve documents for dynamic comparison (backup approach)
     const comparisonDocuments = retrieveComparisonDocuments(
       comparisonCriteria,
       questionAnalysis,
@@ -50,22 +60,16 @@ serve(async (req) => {
     
     // Merge and rank all relevant documents
     const mergedDocuments = mergeComparisonResults(comparisonDocuments);
-    console.log(`Dynamic retrieval found ${mergedDocuments.length} relevant documents across ${comparisonDocuments.length} jurisdiction-topic combinations`);
-
-    // Perform additional semantic search for comprehensive coverage
-    const semanticResults = performSemanticSearch(questionAnalysis, legalDataset, {
-      maxResults: 6,
-      minRelevanceScore: 0.4,
-      prioritizeDomain: primaryDomain
-    });
     
-    // Combine both retrieval approaches
-    const allRelevantDocs = [...mergedDocuments, ...semanticResults]
+    // Combine both retrieval approaches and deduplicate
+    const allRelevantDocs = [...hybridResults, ...mergedDocuments]
       .filter((doc, index, self) => 
         index === self.findIndex(d => d.document.title === doc.document.title)
       )
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, 8);
+
+    console.log(`Final document set: ${allRelevantDocs.length} documents after deduplication`);
 
     // Extract relevant passages for better context
     const relevantPassages = extractRelevantPassages(allRelevantDocs, questionAnalysis);
@@ -77,14 +81,17 @@ serve(async (req) => {
       allRelevantDocs.map(result => result.document)
     );
 
-    // Generate AI response with enhanced context
-    const aiResponse = await generateAILegalResponse(
-      query, 
-      primaryDomain, 
-      secondaryDomain, 
-      comparisonPrompt, 
-      jurisdiction
-    );
+    // Prepare context for improved AI response
+    const promptContext = {
+      query,
+      retrievedDocuments: allRelevantDocs,
+      jurisdiction,
+      legalDomain: primaryDomain || 'general',
+      questionAnalysis
+    };
+
+    // Generate AI response with enhanced context and validation
+    const aiResponse = await generateImprovedLegalResponse(promptContext);
     
     // Extract relevant cases and statutes only from relevant domains
     const relevantPrimaryCases = primaryDomain && legalDataset[primaryDomain] ? 
@@ -106,12 +113,20 @@ serve(async (req) => {
       questionAnalysis
     );
 
-    // Enhance the response with dynamic comparison results
+    // Enhance the response with improved retrieval and validation
     const enhancedResponse = {
       query,
-      domains: [primaryDomain, secondaryDomain].filter(d => d), // Remove null/undefined
+      domains: [primaryDomain, secondaryDomain].filter(d => d),
       questionAnalysis,
       comparisonCriteria,
+      retrievalMetrics: {
+        hybridResults: hybridResults.length,
+        comparisonDocs: mergedDocuments.length,
+        finalDocs: allRelevantDocs.length,
+        avgRelevanceScore: allRelevantDocs.length > 0 
+          ? (allRelevantDocs.reduce((sum, doc) => sum + doc.relevanceScore, 0) / allRelevantDocs.length).toFixed(3)
+          : 0
+      },
       dynamicDocuments: allRelevantDocs.slice(0, 5),
       aiResponse: {
         ...aiResponse,
@@ -271,7 +286,6 @@ function groupDocumentsByContext(documents: any[], criteria: any) {
   const primary: any[] = [];
   const secondary: any[] = [];
   
-  // If we have specific doctrines in the query, focus on those
   const queryLower = criteria.primaryQuery.toLowerCase();
   
   documents.forEach(doc => {
