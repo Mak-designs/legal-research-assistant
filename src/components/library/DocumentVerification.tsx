@@ -9,8 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { recordDocumentEvent } from "@/utils/blockchain";
 import { supabase } from "@/integrations/supabase/client";
 export const DocumentVerification = ({
-  selectedCase = null,
-  onVerifiedDocument = null // New prop to handle verified documents
+  selectedCase = null
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [verificationResult, setVerificationResult] = useState<{
@@ -101,12 +100,6 @@ export const DocumentVerification = ({
             description: "You can view the verification record in the document audit trail."
           });
         }, 1500);
-      }
-
-      // If document is verified and callback is provided, make it available for tamper detection
-      if (status === 'verified' && onVerifiedDocument) {
-        const fileContent = await file.text();
-        onVerifiedDocument(fileContent, file.name);
       }
     } catch (error) {
       console.error("Error verifying document:", error);
