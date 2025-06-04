@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,8 +88,13 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
       </div>;
   };
 
-  // Format domain names for display
+  // Format domain names for display with proper null checking
   const getDomainDisplayName = (domain: string) => {
+    // Add null/undefined check
+    if (!domain || typeof domain !== 'string') {
+      return 'General Law';
+    }
+    
     const domainMap: Record<string, string> = {
       'contract': 'Contract Law',
       'property': 'Property Law',
