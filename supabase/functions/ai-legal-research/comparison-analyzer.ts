@@ -7,7 +7,6 @@ export interface ComparisonCriteria {
   comparisonType: 'definition' | 'penalties' | 'procedures' | 'scope' | 'enforcement' | 'general';
   specificAspects: string[];
   legalDomains: string[];
-  primaryQuery: string;
 }
 
 export interface ComparisonRequest {
@@ -17,7 +16,7 @@ export interface ComparisonRequest {
 }
 
 /**
- * Extract comparison criteria from user query with improved accuracy
+ * Extract comparison criteria from user query
  */
 export function extractComparisonCriteria(query: string): ComparisonCriteria {
   const lowerQuery = query.toLowerCase();
@@ -25,25 +24,24 @@ export function extractComparisonCriteria(query: string): ComparisonCriteria {
   // Extract jurisdictions
   const jurisdictions = extractJurisdictions(query);
   
-  // Extract topics and legal concepts with better context matching
-  const topics = extractTopicsFromQuery(query);
+  // Extract topics and legal concepts
+  const topics = extractTopics(query);
   
-  // Determine comparison type based on query intent
+  // Determine comparison type
   const comparisonType = determineComparisonType(query);
   
   // Extract specific aspects to compare
   const specificAspects = extractSpecificAspects(query);
   
-  // Extract legal domains with better accuracy
-  const legalDomains = extractLegalDomainsFromQuery(query);
+  // Extract legal domains
+  const legalDomains = extractLegalDomains(query);
   
   return {
     jurisdictions,
     topics,
     comparisonType,
     specificAspects,
-    legalDomains,
-    primaryQuery: query
+    legalDomains
   };
 }
 
@@ -53,14 +51,18 @@ function extractJurisdictions(query: string): string[] {
   
   // Common jurisdiction patterns
   const jurisdictionPatterns = [
-    { pattern: /\bzambia\w*|\bzambian\w*/gi, jurisdiction: 'zambian' },
-    { pattern: /\busas?\w*|\bunited states\w*|\bamerican\w*/gi, jurisdiction: 'usa' },
-    { pattern: /\bukw*|\bbritish\w*|\bengland\w*|\bunited kingdom\w*/gi, jurisdiction: 'uk' },
-    { pattern: /\bcanada\w*|\bcanadian\w*/gi, jurisdiction: 'canada' },
-    { pattern: /\baustralia\w*|\baustralian\w*/gi, jurisdiction: 'australia' },
-    { pattern: /\bsouth africa\w*|\bsouth african\w*/gi, jurisdiction: 'south_africa' },
-    { pattern: /\bnigeria\w*|\bnigerian\w*/gi, jurisdiction: 'nigeria' },
-    { pattern: /\bkenya\w*|\bkenyan\w*/gi, jurisdiction: 'kenya' }
+    { pattern: /\bzambia\w*/gi, jurisdiction: 'zambian' },
+    { pattern: /\bzambian\w*/gi, jurisdiction: 'zambian' },
+    { pattern: /\busas?\w*/gi, jurisdiction: 'usa' },
+    { pattern: /\bunited states\w*/gi, jurisdiction: 'usa' },
+    { pattern: /\bukw*/gi, jurisdiction: 'uk' },
+    { pattern: /\bbritish\w*/gi, jurisdiction: 'uk' },
+    { pattern: /\bengland\w*/gi, jurisdiction: 'uk' },
+    { pattern: /\bcanada\w*/gi, jurisdiction: 'canada' },
+    { pattern: /\baustralia\w*/gi, jurisdiction: 'australia' },
+    { pattern: /\bsouth africa\w*/gi, jurisdiction: 'south_africa' },
+    { pattern: /\bnigeria\w*/gi, jurisdiction: 'nigeria' },
+    { pattern: /\bkenya\w*/gi, jurisdiction: 'kenya' }
   ];
   
   jurisdictionPatterns.forEach(({ pattern, jurisdiction }) => {
@@ -77,74 +79,26 @@ function extractJurisdictions(query: string): string[] {
   return jurisdictions.length > 0 ? jurisdictions : ['general'];
 }
 
-function extractTopicsFromQuery(query: string): string[] {
+function extractTopics(query: string): string[] {
   const topics: string[] = [];
   const lowerQuery = query.toLowerCase();
   
-  // Enhanced topic patterns with better context matching
   const topicPatterns = [
-    { 
-      pattern: /\bcontract\w*|\bagreement\w*|\boffer\w*|\bacceptance\w*|\bconsideration\w*/gi, 
-      topic: 'contract_law',
-      context: ['formation', 'breach', 'remedies', 'performance']
-    },
-    { 
-      pattern: /\bproperty\w*|\bland\w*|\bestate\w*|\bownership\w*|\bpossession\w*|\badverse possession\w*/gi, 
-      topic: 'property_law',
-      context: ['title', 'ownership', 'possession', 'adverse possession']
-    },
-    { 
-      pattern: /\btort\w*|\bnegligence\w*|\bliability\w*|\bdamages\w*/gi, 
-      topic: 'tort_law',
-      context: ['negligence', 'duty', 'causation', 'damages']
-    },
-    { 
-      pattern: /\bcriminal\w*|\bcrime\w*|\boffense\w*|\boffence\w*/gi, 
-      topic: 'criminal_law',
-      context: ['elements', 'prosecution', 'defense', 'evidence']
-    },
-    { 
-      pattern: /\bconstitutional\w*|\brights\w*|\bfreedom\w*|\bdue process\w*/gi, 
-      topic: 'constitutional_law',
-      context: ['rights', 'powers', 'freedoms', 'due process']
-    },
-    { 
-      pattern: /\bcyber\w*|\bdigital\w*|\belectronic\w*|\bdata\w*|\btechnology\w*/gi, 
-      topic: 'cyber_law',
-      context: ['digital evidence', 'cybercrime', 'data protection']
-    },
-    { 
-      pattern: /\bevidence\w*|\bproof\w*|\badmissibility\w*|\btestimony\w*/gi, 
-      topic: 'evidence_law',
-      context: ['admissibility', 'burden of proof', 'testimony']
-    },
-    { 
-      pattern: /\bprivacy\w*|\bdata protection\w*|\bconfidentiality\w*/gi, 
-      topic: 'privacy_law',
-      context: ['data protection', 'confidentiality', 'consent']
-    },
-    { 
-      pattern: /\bestoppel\w*/gi, 
-      topic: 'estoppel_law',
-      context: ['promissory', 'proprietary', 'representation']
-    },
-    { 
-      pattern: /\bforce majeure\w*|\bimpossibility\w*|\bfrustration\w*/gi, 
-      topic: 'force_majeure',
-      context: ['impossibility', 'frustration', 'unforeseen events']
-    }
+    { pattern: /\bcontract\w*|\bagreement\w*/gi, topic: 'contract_law' },
+    { pattern: /\bproperty\w*|\bland\w*|\bestate\w*/gi, topic: 'property_law' },
+    { pattern: /\btort\w*|\bnegligence\w*/gi, topic: 'tort_law' },
+    { pattern: /\bcriminal\w*|\bcrime\w*/gi, topic: 'criminal_law' },
+    { pattern: /\bconstitutional\w*|\brights\w*/gi, topic: 'constitutional_law' },
+    { pattern: /\bcyber\w*|\bdigital\w*|\belectronic\w*/gi, topic: 'cyber_law' },
+    { pattern: /\bevidence\w*|\bproof\w*/gi, topic: 'evidence_law' },
+    { pattern: /\bprivacy\w*|\bdata protection\w*/gi, topic: 'privacy_law' },
+    { pattern: /\bsignature\w*|\bauthentication\w*/gi, topic: 'digital_signatures' },
+    { pattern: /\btermination\w*|\bending\w*|\bcancel\w*/gi, topic: 'contract_termination' }
   ];
   
-  topicPatterns.forEach(({ pattern, topic, context }) => {
-    if (pattern.test(query)) {
-      // Check if context words are also present for better accuracy
-      const hasContext = context.some(contextWord => 
-        lowerQuery.includes(contextWord.toLowerCase())
-      );
-      
-      if (hasContext || !topics.includes(topic)) {
-        topics.push(topic);
-      }
+  topicPatterns.forEach(({ pattern, topic }) => {
+    if (pattern.test(query) && !topics.includes(topic)) {
+      topics.push(topic);
     }
   });
   
@@ -154,15 +108,15 @@ function extractTopicsFromQuery(query: string): string[] {
 function determineComparisonType(query: string): ComparisonCriteria['comparisonType'] {
   const lowerQuery = query.toLowerCase();
   
-  if (/\bdefin\w*|\bmeaning\w*|\bwhat is\w*|\bexplain\w*|\belements?\w*/i.test(query)) {
+  if (/\bdefin\w*|\bmeaning\w*|\bwhat is\w*/i.test(query)) {
     return 'definition';
-  } else if (/\bpenalt\w*|\bsanction\w*|\bpunishment\w*|\bfine\w*|\bimprisonment\w*/i.test(query)) {
+  } else if (/\bpenalt\w*|\bsanction\w*|\bpunishment\w*/i.test(query)) {
     return 'penalties';
-  } else if (/\bprocedure\w*|\bprocess\w*|\bsteps\w*|\bhow to\w*|\brequirements?\w*/i.test(query)) {
+  } else if (/\bprocedure\w*|\bprocess\w*|\bsteps\w*/i.test(query)) {
     return 'procedures';
-  } else if (/\bscope\w*|\bapplication\w*|\bcoverage\w*|\bextent\w*/i.test(query)) {
+  } else if (/\bscope\w*|\bapplication\w*|\bcoverage\w*/i.test(query)) {
     return 'scope';
-  } else if (/\benforcement\w*|\bimplementation\w*|\bcompliance\w*/i.test(query)) {
+  } else if (/\benforcement\w*|\bimplementation\w*/i.test(query)) {
     return 'enforcement';
   }
   
@@ -174,13 +128,11 @@ function extractSpecificAspects(query: string): string[] {
   const lowerQuery = query.toLowerCase();
   
   const aspectPatterns = [
-    'adverse possession', 'estoppel', 'force majeure', 'consideration', 'breach remedies',
+    'termination clauses', 'force majeure', 'consideration', 'breach remedies',
     'chain of custody', 'hash verification', 'authentication methods',
     'burden of proof', 'admissibility', 'expert testimony',
     'constitutional rights', 'due process', 'equal protection',
-    'liability', 'damages', 'causation', 'duty of care',
-    'termination clauses', 'formation elements', 'interpretation',
-    'title', 'ownership', 'possession', 'property rights'
+    'liability', 'damages', 'causation', 'duty of care'
   ];
   
   aspectPatterns.forEach(aspect => {
@@ -192,19 +144,17 @@ function extractSpecificAspects(query: string): string[] {
   return aspects;
 }
 
-function extractLegalDomainsFromQuery(query: string): string[] {
+function extractLegalDomains(query: string): string[] {
   const domains: string[] = [];
   const lowerQuery = query.toLowerCase();
   
   const domainMap = {
-    'contract': ['contract', 'agreement', 'offer', 'acceptance', 'consideration', 'formation'],
-    'property': ['property', 'land', 'ownership', 'possession', 'adverse possession', 'title'],
-    'tort': ['tort', 'negligence', 'liability', 'damages', 'duty of care'],
-    'constitutional': ['constitutional', 'rights', 'freedom', 'due process'],
-    'criminal': ['criminal', 'crime', 'prosecution', 'offense', 'offence'],
-    'cyberSecurity': ['cyber', 'digital', 'electronic', 'data', 'technology'],
-    'evidence': ['evidence', 'proof', 'admissibility', 'testimony'],
-    'estoppel': ['estoppel', 'promissory', 'proprietary', 'representation']
+    'contract': ['contract', 'agreement', 'offer', 'acceptance'],
+    'property': ['property', 'land', 'ownership', 'possession'],
+    'tort': ['tort', 'negligence', 'liability'],
+    'constitutional': ['constitutional', 'rights', 'freedom'],
+    'criminal': ['criminal', 'crime', 'prosecution'],
+    'cyberSecurity': ['cyber', 'digital', 'electronic', 'data']
   };
   
   Object.entries(domainMap).forEach(([domain, keywords]) => {
@@ -224,17 +174,14 @@ export function generateComparisonPrompt(
   query: string,
   retrievedDocuments: any[]
 ): string {
-  let prompt = `You are a legal research expert. Analyze the following query and provide a focused, accurate response based on the legal documents provided.\n\n`;
+  let prompt = `You are a legal research expert. Based on the following query and legal documents, provide a comprehensive comparison analysis.\n\n`;
   
   prompt += `User Query: "${query}"\n\n`;
   
-  // Add query-specific guidance
-  prompt += getQuerySpecificGuidance(query, criteria);
-  
-  // Add jurisdiction context if relevant
+  // Add jurisdiction context
   if (criteria.jurisdictions.length > 1) {
     prompt += `Jurisdictions to Compare: ${criteria.jurisdictions.join(' vs ')}\n`;
-  } else if (criteria.jurisdictions[0] !== 'general') {
+  } else {
     prompt += `Jurisdiction Context: ${criteria.jurisdictions[0]}\n`;
   }
   
@@ -244,7 +191,7 @@ export function generateComparisonPrompt(
   }
   
   // Add comparison criteria
-  prompt += `Analysis Focus: ${criteria.comparisonType}\n`;
+  prompt += `Comparison Focus: ${criteria.comparisonType}\n`;
   
   if (criteria.specificAspects.length > 0) {
     prompt += `Specific Aspects to Address: ${criteria.specificAspects.join(', ')}\n`;
@@ -261,75 +208,21 @@ export function generateComparisonPrompt(
   });
   
   prompt += `\n--- ANALYSIS REQUIREMENTS ---\n`;
-  prompt += `IMPORTANT: Only analyze the legal domains and topics that are directly relevant to the user's query. Do not include unrelated legal areas.\n\n`;
+  prompt += `Please provide a structured comparison that includes:\n`;
+  prompt += `1. Key similarities between the jurisdictions/concepts\n`;
+  prompt += `2. Important differences and their implications\n`;
+  prompt += `3. Practical applications and examples\n`;
+  prompt += `4. Citations to relevant legal authorities\n`;
   
-  prompt += getAnalysisRequirements(criteria);
+  if (criteria.comparisonType === 'definition') {
+    prompt += `5. Clear definitions from each jurisdiction with supporting authority\n`;
+  } else if (criteria.comparisonType === 'penalties') {
+    prompt += `5. Specific penalty structures and enforcement mechanisms\n`;
+  } else if (criteria.comparisonType === 'procedures') {
+    prompt += `5. Step-by-step procedural requirements and timelines\n`;
+  }
   
   prompt += `\nProvide your response in JSON format with "recommendation", "primaryAnalysis", "secondaryAnalysis", and "technicalDetails" fields.`;
   
   return prompt;
-}
-
-function getQuerySpecificGuidance(query: string, criteria: ComparisonCriteria): string {
-  const lowerQuery = query.toLowerCase();
-  
-  if (lowerQuery.includes('estoppel')) {
-    return `FOCUS: This query is specifically about the doctrine of estoppel. Address:
-    - Definition and types of estoppel (promissory, proprietary, by representation)
-    - Key elements and requirements
-    - Relevant case law and applications
-    Do NOT include unrelated contract or property law principles unless they directly relate to estoppel.\n\n`;
-  }
-  
-  if (lowerQuery.includes('adverse possession')) {
-    return `FOCUS: This query is specifically about adverse possession. Address:
-    - Definition and requirements (actual, open, notorious, exclusive, continuous, hostile)
-    - Statutory periods and policy rationale
-    - Relevant case law on adverse possession
-    Do NOT include general property law principles unless they directly relate to adverse possession.\n\n`;
-  }
-  
-  if (lowerQuery.includes('force majeure')) {
-    return `FOCUS: This query is specifically about force majeure clauses. Address:
-    - Definition and purpose of force majeure clauses
-    - How courts interpret these clauses (strict interpretation, express wording, etc.)
-    - Relevant case law on force majeure and impossibility
-    Do NOT include general contract formation principles unless they directly relate to force majeure.\n\n`;
-  }
-  
-  if (lowerQuery.includes('elements') && lowerQuery.includes('contract')) {
-    return `FOCUS: This query is specifically about contract formation elements. Address:
-    - Essential elements: offer, acceptance, consideration, intention, capacity, legality
-    - How each element is defined and applied
-    - Relevant case law on contract formation
-    Do NOT include property law analysis.\n\n`;
-  }
-  
-  return `FOCUS: Analyze only the legal domains and concepts that are directly relevant to the user's query. Avoid including unrelated legal areas.\n\n`;
-}
-
-function getAnalysisRequirements(criteria: ComparisonCriteria): string {
-  let requirements = `Please provide a structured analysis that includes:\n`;
-  
-  if (criteria.comparisonType === 'definition') {
-    requirements += `1. Clear definition of the legal concept with supporting authority\n`;
-    requirements += `2. Key elements or requirements\n`;
-    requirements += `3. Relevant case law that establishes or clarifies the definition\n`;
-    requirements += `4. Practical applications and examples\n`;
-  } else if (criteria.comparisonType === 'penalties') {
-    requirements += `1. Specific penalty structures and enforcement mechanisms\n`;
-    requirements += `2. Relevant statutes and case law on penalties\n`;
-    requirements += `3. Comparison of penalty approaches if multiple jurisdictions\n`;
-  } else if (criteria.comparisonType === 'procedures') {
-    requirements += `1. Step-by-step procedural requirements\n`;
-    requirements += `2. Timelines and deadlines where relevant\n`;
-    requirements += `3. Relevant procedural rules and case law\n`;
-  } else {
-    requirements += `1. Key legal principles and their application\n`;
-    requirements += `2. Relevant case law and statutory authority\n`;
-    requirements += `3. Practical implications and examples\n`;
-    requirements += `4. Clear citations to legal authorities\n`;
-  }
-  
-  return requirements;
 }

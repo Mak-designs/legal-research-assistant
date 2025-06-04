@@ -12,7 +12,7 @@ export interface ComparisonDocument {
 }
 
 /**
- * Retrieve documents for comparison analysis with improved relevance
+ * Retrieve documents for comparison analysis
  */
 export function retrieveComparisonDocuments(
   criteria: ComparisonCriteria,
@@ -21,181 +21,144 @@ export function retrieveComparisonDocuments(
 ): ComparisonDocument[] {
   const comparisonDocs: ComparisonDocument[] = [];
   
-  // Focus on the most relevant topics for the query
-  const relevantTopics = getRelevantTopics(criteria, questionAnalysis);
-  const relevantJurisdictions = getRelevantJurisdictions(criteria);
-  
-  // For each relevant combination, retrieve documents
-  relevantJurisdictions.forEach(jurisdiction => {
-    relevantTopics.forEach(topic => {
-      // Build focused search query
-      const enhancedQuery = buildFocusedQuery(criteria, jurisdiction, topic);
+  // For each jurisdiction, retrieve relevant documents
+  criteria.jurisdictions.forEach(jurisdiction => {
+    criteria.topics.forEach(topic => {
+      // Enhance search for this specific jurisdiction and topic
+      const enhancedQuery = buildEnhancedQuery(criteria, jurisdiction, topic);
       
-      // Perform targeted semantic search
+      // Perform semantic search with jurisdiction and topic focus
       const searchResults = performSemanticSearch(
         { 
           ...questionAnalysis, 
-          keywords: [...questionAnalysis.keywords, ...getTopicKeywords(topic)],
+          keywords: [...questionAnalysis.keywords, jurisdiction, topic],
           jurisdiction,
           legalDomain: topic
         },
         legalDataset,
         {
-          maxResults: 8,
-          minRelevanceScore: 0.4,
-          prioritizeDomain: topic,
-          filterByDomain: true
+          maxResults: 6,
+          minRelevanceScore: 0.3,
+          prioritizeDomain: topic
         }
       );
       
-      // Filter and validate results for relevance
-      const relevantResults = filterRelevantResults(searchResults, criteria, topic);
+      // Filter results by jurisdiction if not general
+      const jurisdictionFiltered = jurisdiction === 'general' 
+        ? searchResults 
+        : searchResults.filter(result => 
+            result.document.domain === jurisdiction || 
+            result.document.description?.toLowerCase().includes(jurisdiction.toLowerCase())
+          );
       
-      if (relevantResults.length > 0) {
+      if (jurisdictionFiltered.length > 0) {
         comparisonDocs.push({
           jurisdiction,
           topic,
-          documents: relevantResults
+          documents: jurisdictionFiltered
         });
       }
     });
   });
   
-  // If no specific results, get general but focused results
+  // If no jurisdiction-specific results, get general results
   if (comparisonDocs.length === 0) {
-    const fallbackResults = getFallbackResults(criteria, questionAnalysis, legalDataset);
-    if (fallbackResults.length > 0) {
-      comparisonDocs.push({
-        jurisdiction: 'general',
-        topic: criteria.topics[0] || 'general_law',
-        documents: fallbackResults
-      });
-    }
+    const generalResults = performSemanticSearch(
+      questionAnalysis,
+      legalDataset,
+      {
+        maxResults: 8,
+        minRelevanceScore: 0.2
+      }
+    );
+    
+    comparisonDocs.push({
+      jurisdiction: 'general',
+      topic: 'general_law',
+      documents: generalResults
+    });
   }
   
   return comparisonDocs;
 }
 
-function getRelevantTopics(criteria: ComparisonCriteria, questionAnalysis: QuestionAnalysis): string[] {
-  // Prioritize topics based on query specificity
-  const queryLower = criteria.primaryQuery.toLowerCase();
+/**
+ * Build enhanced query for specific jurisdiction and topic
+ */
+function buildEnhancedQuery(
+  criteria: ComparisonCriteria,
+  jurisdiction: string,
+  topic: string
+): string {
+  let enhancedQuery = '';
   
-  // If query is asking about specific doctrine, focus on that
-  if (queryLower.includes('estoppel')) {
-    return ['estoppel_law'];
-  }
-  
-  if (queryLower.includes('adverse possession')) {
-    return ['property_law'];
-  }
-  
-  if (queryLower.includes('force majeure')) {
-    return ['contract_law'];
-  }
-  
-  if (queryLower.includes('elements') && queryLower.includes('contract')) {
-    return ['contract_law'];
-  }
-  
-  // Use detected topics but limit to most relevant
-  return criteria.topics.slice(0, 2);
-}
-
-function getRelevantJurisdictions(criteria: ComparisonCriteria): string[] {
-  // If specific jurisdictions mentioned, use those
-  if (criteria.jurisdictions.length > 0 && !criteria.jurisdictions.includes('general')) {
-    return criteria.jurisdictions;
-  }
-  
-  // Default to general for most queries
-  return ['general'];
-}
-
-function getTopicKeywords(topic: string): string[] {
-  const topicKeywords: Record<string, string[]> = {
-    'contract_law': ['contract', 'agreement', 'offer', 'acceptance', 'consideration'],
-    'property_law': ['property', 'ownership', 'possession', 'title', 'adverse possession'],
-    'tort_law': ['tort', 'negligence', 'liability', 'damages'],
-    'criminal_law': ['criminal', 'crime', 'prosecution', 'evidence'],
-    'constitutional_law': ['constitutional', 'rights', 'freedom'],
-    'cyber_law': ['cyber', 'digital', 'electronic', 'data'],
-    'evidence_law': ['evidence', 'proof', 'admissibility'],
-    'privacy_law': ['privacy', 'data protection'],
-    'estoppel_law': ['estoppel', 'promissory', 'proprietary', 'representation'],
-    'force_majeure': ['force majeure', 'impossibility', 'frustration']
-  };
-  
-  return topicKeywords[topic] || ['legal', 'law'];
-}
-
-function buildFocusedQuery(criteria: ComparisonCriteria, jurisdiction: string, topic: string): string {
-  const baseQuery = criteria.primaryQuery;
-  const topicTerms = getTopicKeywords(topic);
+  // Add jurisdiction-specific terms
   const jurisdictionTerms = getJurisdictionTerms(jurisdiction);
+  enhancedQuery += jurisdictionTerms.join(' ') + ' ';
   
-  // Combine base query with focused terms
-  return `${baseQuery} ${topicTerms.join(' ')} ${jurisdictionTerms.join(' ')}`.trim();
+  // Add topic-specific terms
+  const topicTerms = getTopicTerms(topic);
+  enhancedQuery += topicTerms.join(' ') + ' ';
+  
+  // Add comparison-specific terms
+  if (criteria.comparisonType !== 'general') {
+    const comparisonTerms = getComparisonTerms(criteria.comparisonType);
+    enhancedQuery += comparisonTerms.join(' ') + ' ';
+  }
+  
+  // Add specific aspects
+  if (criteria.specificAspects.length > 0) {
+    enhancedQuery += criteria.specificAspects.join(' ') + ' ';
+  }
+  
+  return enhancedQuery.trim();
 }
 
 function getJurisdictionTerms(jurisdiction: string): string[] {
   const jurisdictionMap: Record<string, string[]> = {
-    'zambian': ['Zambia', 'Zambian law'],
-    'usa': ['United States', 'American law'],
-    'uk': ['United Kingdom', 'English law'],
-    'canada': ['Canadian law'],
-    'australia': ['Australian law'],
-    'south_africa': ['South African law'],
-    'nigeria': ['Nigerian law'],
-    'kenya': ['Kenyan law'],
-    'general': ['common law', 'legal principles']
+    'zambian': ['Zambia', 'Zambian law', 'Lusaka', 'Supreme Court of Zambia'],
+    'usa': ['United States', 'American law', 'federal', 'Supreme Court'],
+    'uk': ['United Kingdom', 'English law', 'British', 'House of Lords'],
+    'canada': ['Canadian law', 'Supreme Court of Canada'],
+    'australia': ['Australian law', 'High Court of Australia'],
+    'south_africa': ['South African law', 'Constitutional Court'],
+    'nigeria': ['Nigerian law', 'Supreme Court of Nigeria'],
+    'kenya': ['Kenyan law', 'Court of Appeal of Kenya'],
+    'general': ['common law', 'legal principles', 'international law']
   };
   
   return jurisdictionMap[jurisdiction] || jurisdictionMap['general'];
 }
 
-function filterRelevantResults(results: SearchResult[], criteria: ComparisonCriteria, topic: string): SearchResult[] {
-  const queryLower = criteria.primaryQuery.toLowerCase();
+function getTopicTerms(topic: string): string[] {
+  const topicMap: Record<string, string[]> = {
+    'contract_law': ['contract', 'agreement', 'offer', 'acceptance', 'consideration'],
+    'property_law': ['property', 'ownership', 'possession', 'title', 'land'],
+    'tort_law': ['tort', 'negligence', 'liability', 'damages', 'duty of care'],
+    'criminal_law': ['criminal', 'crime', 'prosecution', 'defense', 'evidence'],
+    'constitutional_law': ['constitutional', 'rights', 'freedom', 'due process'],
+    'cyber_law': ['cyber', 'digital', 'electronic', 'data', 'technology'],
+    'evidence_law': ['evidence', 'proof', 'admissibility', 'testimony'],
+    'privacy_law': ['privacy', 'data protection', 'confidentiality'],
+    'digital_signatures': ['signature', 'authentication', 'verification'],
+    'contract_termination': ['termination', 'breach', 'cancellation'],
+    'general_law': ['legal', 'law', 'court', 'statute', 'case']
+  };
   
-  // Apply topic-specific filtering
-  return results.filter(result => {
-    const resultText = `${result.document.title} ${result.document.description}`.toLowerCase();
-    
-    // For specific doctrines, ensure relevance
-    if (queryLower.includes('estoppel')) {
-      return resultText.includes('estoppel') || 
-             resultText.includes('promissory') || 
-             resultText.includes('representation');
-    }
-    
-    if (queryLower.includes('adverse possession')) {
-      return resultText.includes('adverse possession') || 
-             resultText.includes('possession') || 
-             resultText.includes('title');
-    }
-    
-    if (queryLower.includes('force majeure')) {
-      return resultText.includes('force majeure') || 
-             resultText.includes('impossibility') || 
-             resultText.includes('frustration');
-    }
-    
-    // General relevance check
-    return result.relevanceScore > 0.3;
-  });
+  return topicMap[topic] || topicMap['general_law'];
 }
 
-function getFallbackResults(criteria: ComparisonCriteria, questionAnalysis: QuestionAnalysis, legalDataset: any): SearchResult[] {
-  // Get general results but still try to be relevant
-  const fallbackResults = performSemanticSearch(
-    questionAnalysis,
-    legalDataset,
-    {
-      maxResults: 6,
-      minRelevanceScore: 0.2
-    }
-  );
+function getComparisonTerms(comparisonType: string): string[] {
+  const comparisonMap: Record<string, string[]> = {
+    'definition': ['definition', 'meaning', 'elements', 'criteria'],
+    'penalties': ['penalty', 'sanction', 'punishment', 'fine', 'imprisonment'],
+    'procedures': ['procedure', 'process', 'steps', 'requirements', 'method'],
+    'scope': ['scope', 'application', 'coverage', 'extent', 'jurisdiction'],
+    'enforcement': ['enforcement', 'implementation', 'compliance', 'monitoring'],
+    'general': ['law', 'legal', 'principle', 'rule', 'regulation']
+  };
   
-  return fallbackResults;
+  return comparisonMap[comparisonType] || comparisonMap['general'];
 }
 
 /**

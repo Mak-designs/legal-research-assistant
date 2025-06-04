@@ -34,10 +34,22 @@ serve(async (req) => {
     const comparisonCriteria = extractComparisonCriteria(query);
     console.log(`Comparison Analysis - Jurisdictions: ${comparisonCriteria.jurisdictions.join(', ')}, Topics: ${comparisonCriteria.topics.join(', ')}, Type: ${comparisonCriteria.comparisonType}`);
 
-    // Determine relevant domains based on query analysis
-    const relevantDomains = determineRelevantDomains(questionAnalysis, comparisonCriteria);
-    const primaryDomain = relevantDomains.primary;
-    const secondaryDomain = relevantDomains.secondary;
+    // Use enhanced analysis for domain detection, fallback to original method
+    let primaryDomain = questionAnalysis.legalDomain !== 'general' ? questionAnalysis.legalDomain : null;
+    let secondaryDomain = null;
+    
+    if (!primaryDomain) {
+      [primaryDomain, secondaryDomain] = analyzeQuery(query);
+    } else {
+      const [, fallbackSecondary] = analyzeQuery(query);
+      secondaryDomain = fallbackSecondary;
+    }
+    
+    // Override domains with comparison criteria if more specific
+    if (comparisonCriteria.legalDomains.length > 0) {
+      primaryDomain = comparisonCriteria.legalDomains[0];
+      secondaryDomain = comparisonCriteria.legalDomains[1] || secondaryDomain;
+    }
     
     console.log(`Final domains: Primary: ${primaryDomain}, Secondary: ${secondaryDomain}`);
 
@@ -54,8 +66,8 @@ serve(async (req) => {
 
     // Perform additional semantic search for comprehensive coverage
     const semanticResults = performSemanticSearch(questionAnalysis, legalDataset, {
-      maxResults: 6,
-      minRelevanceScore: 0.4,
+      maxResults: 8,
+      minRelevanceScore: 0.3,
       prioritizeDomain: primaryDomain
     });
     
@@ -65,7 +77,7 @@ serve(async (req) => {
         index === self.findIndex(d => d.document.title === doc.document.title)
       )
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, 8);
+      .slice(0, 10);
 
     // Extract relevant passages for better context
     const relevantPassages = extractRelevantPassages(allRelevantDocs, questionAnalysis);
@@ -86,15 +98,11 @@ serve(async (req) => {
       jurisdiction
     );
     
-    // Extract relevant cases and statutes only from relevant domains
-    const relevantPrimaryCases = primaryDomain && legalDataset[primaryDomain] ? 
-      findRelevantCases(query, legalDataset[primaryDomain].cases) : [];
-    const relevantPrimaryStatutes = primaryDomain && legalDataset[primaryDomain] ? 
-      findRelevantStatutes(query, legalDataset[primaryDomain].statutes) : [];
-    const relevantSecondaryCases = secondaryDomain && legalDataset[secondaryDomain] ? 
-      findRelevantCases(query, legalDataset[secondaryDomain].cases) : [];
-    const relevantSecondaryStatutes = secondaryDomain && legalDataset[secondaryDomain] ? 
-      findRelevantStatutes(query, legalDataset[secondaryDomain].statutes) : [];
+    // Extract relevant cases and statutes using both original and enhanced methods
+    const relevantPrimaryCases = findRelevantCases(query, legalDataset[primaryDomain].cases);
+    const relevantPrimaryStatutes = findRelevantStatutes(query, legalDataset[primaryDomain].statutes);
+    const relevantSecondaryStatutes = findRelevantStatutes(query, legalDataset[secondaryDomain].statutes);
+    const relevantSecondaryCases = findRelevantCases(query, legalDataset[secondaryDomain].cases);
 
     // Generate contextual fallback answer if AI fails
     const contextualAnswer = generateContextualAnswer(questionAnalysis, allRelevantDocs, relevantPassages);
@@ -109,7 +117,7 @@ serve(async (req) => {
     // Enhance the response with dynamic comparison results
     const enhancedResponse = {
       query,
-      domains: [primaryDomain, secondaryDomain].filter(d => d), // Remove null/undefined
+      domains: [primaryDomain, secondaryDomain],
       questionAnalysis,
       comparisonCriteria,
       dynamicDocuments: allRelevantDocs.slice(0, 5),
@@ -121,17 +129,28 @@ serve(async (req) => {
       },
       recommendation: aiResponse.recommendation || contextualAnswer,
       technicalDetails: aiResponse.technicalDetails,
-      comparison: buildComparisonResponse(
-        primaryDomain, 
-        secondaryDomain, 
-        aiResponse, 
-        dynamicComparison,
-        relevantPrimaryCases,
-        relevantPrimaryStatutes,
-        relevantSecondaryCases,
-        relevantSecondaryStatutes,
-        query
-      ),
+      comparison: {
+        commonLaw: {
+          analysis: aiResponse.primaryAnalysis || dynamicComparison.primaryAnalysis,
+          principles: extractRelevantPrinciples(query, legalDataset[primaryDomain].principles),
+          caseExamples: relevantPrimaryCases.map(
+            (c) => `${c.title} (${c.citation}): ${c.description}`
+          ),
+          statutes: relevantPrimaryStatutes.map(
+            (s) => `${s.title} (${s.citation}): ${s.description}`
+          ),
+        },
+        contractLaw: {
+          analysis: aiResponse.secondaryAnalysis || dynamicComparison.secondaryAnalysis,
+          principles: extractRelevantPrinciples(query, legalDataset[secondaryDomain].principles),
+          caseExamples: relevantSecondaryCases.map(
+            (c) => `${c.title} (${c.citation}): ${c.description}`
+          ),
+          statutes: relevantSecondaryStatutes.map(
+            (s) => `${s.title} (${s.citation}): ${s.description}`
+          ),
+        },
+      },
     };
 
     return new Response(JSON.stringify(enhancedResponse), {
@@ -149,96 +168,6 @@ serve(async (req) => {
 });
 
 /**
- * Determine relevant domains based on query analysis and comparison criteria
- */
-function determineRelevantDomains(questionAnalysis: QuestionAnalysis, comparisonCriteria: any) {
-  const queryLower = comparisonCriteria.primaryQuery.toLowerCase();
-  
-  // For specific doctrines, return focused domains
-  if (queryLower.includes('estoppel')) {
-    return { primary: 'contract', secondary: null }; // Estoppel is primarily contract-related
-  }
-  
-  if (queryLower.includes('adverse possession')) {
-    return { primary: 'property', secondary: null };
-  }
-  
-  if (queryLower.includes('force majeure')) {
-    return { primary: 'contract', secondary: null };
-  }
-  
-  if (queryLower.includes('elements') && queryLower.includes('contract')) {
-    return { primary: 'contract', secondary: null };
-  }
-  
-  // Use enhanced analysis for domain detection
-  let primaryDomain = questionAnalysis.legalDomain !== 'general' ? questionAnalysis.legalDomain : null;
-  let secondaryDomain = null;
-  
-  // Fallback to original method if needed
-  if (!primaryDomain || primaryDomain === 'general') {
-    const [fallbackPrimary, fallbackSecondary] = analyzeQuery(comparisonCriteria.primaryQuery);
-    primaryDomain = fallbackPrimary;
-    secondaryDomain = fallbackSecondary;
-  }
-  
-  // Override with comparison criteria if more specific
-  if (comparisonCriteria.legalDomains.length > 0) {
-    primaryDomain = comparisonCriteria.legalDomains[0];
-    secondaryDomain = comparisonCriteria.legalDomains[1] || null;
-  }
-  
-  return { primary: primaryDomain, secondary: secondaryDomain };
-}
-
-/**
- * Build comparison response structure based on relevant domains only
- */
-function buildComparisonResponse(
-  primaryDomain: string | null,
-  secondaryDomain: string | null,
-  aiResponse: any,
-  dynamicComparison: any,
-  relevantPrimaryCases: any[],
-  relevantPrimaryStatutes: any[],
-  relevantSecondaryCases: any[],
-  relevantSecondaryStatutes: any[],
-  query: string
-) {
-  const comparison: any = {};
-  
-  // Only include primary domain analysis if it exists and is relevant
-  if (primaryDomain && legalDataset[primaryDomain]) {
-    comparison.commonLaw = {
-      analysis: aiResponse.primaryAnalysis || dynamicComparison.primaryAnalysis,
-      principles: extractRelevantPrinciples(query, legalDataset[primaryDomain].principles),
-      caseExamples: relevantPrimaryCases.map(
-        (c) => `${c.title} (${c.citation}): ${c.description}`
-      ),
-      statutes: relevantPrimaryStatutes.map(
-        (s) => `${s.title} (${s.citation}): ${s.description}`
-      ),
-    };
-  }
-  
-  // Only include secondary domain analysis if it exists, is different from primary, and is relevant
-  if (secondaryDomain && secondaryDomain !== primaryDomain && legalDataset[secondaryDomain]) {
-    comparison.contractLaw = {
-      analysis: aiResponse.secondaryAnalysis || dynamicComparison.secondaryAnalysis,
-      principles: extractRelevantPrinciples(query, legalDataset[secondaryDomain].principles),
-      caseExamples: relevantSecondaryCases.map(
-        (c) => `${c.title} (${c.citation}): ${c.description}`
-      ),
-      statutes: relevantSecondaryStatutes.map(
-        (s) => `${s.title} (${s.citation}): ${s.description}`
-      ),
-    };
-  }
-  
-  return comparison;
-}
-
-/**
  * Generate dynamic comparison analysis based on retrieved documents
  */
 function generateDynamicComparison(
@@ -247,7 +176,7 @@ function generateDynamicComparison(
   questionAnalysis: QuestionAnalysis
 ): { primaryAnalysis: string; secondaryAnalysis: string } {
   
-  // Group documents by context
+  // Group documents by jurisdiction or domain
   const groupedDocs = groupDocumentsByContext(documents, criteria);
   
   const primaryAnalysis = generateAnalysisForGroup(
@@ -271,32 +200,8 @@ function groupDocumentsByContext(documents: any[], criteria: any) {
   const primary: any[] = [];
   const secondary: any[] = [];
   
-  // If we have specific doctrines in the query, focus on those
-  const queryLower = criteria.primaryQuery.toLowerCase();
-  
   documents.forEach(doc => {
-    const docText = `${doc.document.title} ${doc.document.description}`.toLowerCase();
-    
-    // For specific doctrines, group by relevance to that doctrine
-    if (queryLower.includes('estoppel')) {
-      if (docText.includes('estoppel') || docText.includes('promissory') || docText.includes('representation')) {
-        primary.push(doc);
-      } else {
-        secondary.push(doc);
-      }
-      return;
-    }
-    
-    if (queryLower.includes('adverse possession')) {
-      if (docText.includes('adverse possession') || docText.includes('possession')) {
-        primary.push(doc);
-      } else {
-        secondary.push(doc);
-      }
-      return;
-    }
-    
-    // Default grouping by jurisdiction or domain
+    // Group by jurisdiction if comparing jurisdictions
     if (criteria.jurisdictions.length > 1) {
       const docJurisdiction = doc.document.comparisonJurisdiction || 
                              determineDocumentJurisdiction(doc.document);
@@ -307,15 +212,25 @@ function groupDocumentsByContext(documents: any[], criteria: any) {
         secondary.push(doc);
       }
     } else {
-      // Split documents evenly
-      const midpoint = Math.ceil(documents.length / 2);
-      if (documents.indexOf(doc) < midpoint) {
+      // Group by domain/topic
+      const docDomain = doc.document.domain || doc.document.comparisonTopic;
+      
+      if (criteria.legalDomains.includes(docDomain)) {
         primary.push(doc);
       } else {
         secondary.push(doc);
       }
     }
   });
+  
+  // If grouping didn't work well, split documents evenly
+  if (primary.length === 0 && secondary.length === 0) {
+    const midpoint = Math.ceil(documents.length / 2);
+    return {
+      primary: documents.slice(0, midpoint),
+      secondary: documents.slice(midpoint)
+    };
+  }
   
   return { primary, secondary };
 }
