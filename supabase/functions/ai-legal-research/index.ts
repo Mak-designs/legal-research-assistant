@@ -4,14 +4,12 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { analyzeQuery } from "./analyzeQuery.ts";
 import { legalDataset } from "./legalDataset.ts";
 import { findRelevantCases, findRelevantStatutes, extractRelevantPrinciples } from "./relevance.ts";
-import { generateImprovedLegalResponse } from "./improved-openai.ts";
+import { generateAILegalResponse } from "./openai.ts";
 import { buildSystemPrompt } from "./promptBuilder.ts";
 import { analyzeUserQuestion, QuestionAnalysis } from "./nlp-utils.ts";
 import { performSemanticSearch, extractRelevantPassages, generateContextualAnswer } from "./semantic-search.ts";
 import { extractComparisonCriteria, generateComparisonPrompt } from "./comparison-analyzer.ts";
 import { retrieveComparisonDocuments, mergeComparisonResults } from "./dynamic-retrieval.ts";
-import { performHybridSearch } from "./hybrid-search.ts";
-import { performEnhancedRetrieval, generateEnhancedAnalysis } from "./supabase-enhanced-retrieval.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -43,72 +41,31 @@ serve(async (req) => {
     
     console.log(`Final domains: Primary: ${primaryDomain}, Secondary: ${secondaryDomain}`);
 
-    // Try enhanced Supabase retrieval first
-    let enhancedRetrievalData;
-    let allRelevantDocs: any[] = [];
-    let usingSupabaseSearch = false;
+    // Retrieve documents for dynamic comparison
+    const comparisonDocuments = retrieveComparisonDocuments(
+      comparisonCriteria,
+      questionAnalysis,
+      legalDataset
+    );
+    
+    // Merge and rank all relevant documents
+    const mergedDocuments = mergeComparisonResults(comparisonDocuments);
+    console.log(`Dynamic retrieval found ${mergedDocuments.length} relevant documents across ${comparisonDocuments.length} jurisdiction-topic combinations`);
 
-    try {
-      // Attempt to generate query embedding (this would normally use OpenAI)
-      let queryEmbedding: number[] | null = null;
-      
-      // For now, we'll simulate embedding generation or skip if not available
-      // In production, you'd call OpenAI embeddings API here
-      
-      enhancedRetrievalData = await performEnhancedRetrieval(
-        questionAnalysis,
-        queryEmbedding,
-        {
-          useVectorSearch: true,
-          useHybridSearch: true,
-          maxResults: 8,
-          jurisdictionFilter: jurisdiction !== "general" ? jurisdiction : undefined,
-          requireCitations: true
-        }
-      );
-
-      if (enhancedRetrievalData.results.length > 0) {
-        allRelevantDocs = enhancedRetrievalData.results;
-        usingSupabaseSearch = true;
-        console.log(`Supabase enhanced search: ${enhancedRetrievalData.searchStrategy} strategy found ${allRelevantDocs.length} documents`);
-      }
-    } catch (supabaseError) {
-      console.error('Supabase enhanced retrieval failed:', supabaseError);
-    }
-
-    // Fallback to hybrid search if Supabase search fails or returns no results
-    if (!usingSupabaseSearch || allRelevantDocs.length === 0) {
-      console.log('Using fallback hybrid search...');
-      
-      const hybridResults = performHybridSearch(questionAnalysis, legalDataset, {
-        semanticWeight: 0.7,
-        keywordWeight: 0.3,
-        maxResults: 8,
-        minRelevanceScore: 0.3
-      });
-      
-      console.log(`Hybrid search found ${hybridResults.length} relevant documents`);
-
-      // Retrieve documents for dynamic comparison (backup approach)
-      const comparisonDocuments = retrieveComparisonDocuments(
-        comparisonCriteria,
-        questionAnalysis,
-        legalDataset
-      );
-      
-      // Merge and rank all relevant documents
-      const mergedDocuments = mergeComparisonResults(comparisonDocuments);
-      
-      // Combine both retrieval approaches and deduplicate
-      allRelevantDocs = [...hybridResults, ...mergedDocuments]
-        .filter((doc, index, self) => 
-          index === self.findIndex(d => d.document.title === doc.document.title)
-        )
-        .sort((a, b) => b.relevanceScore - a.relevanceScore)
-        .slice(0, 8);
-
-      console.log(`Final document set: ${allRelevantDocs.length} documents after deduplication`);
-    }
+    // Perform additional semantic search for comprehensive coverage
+    const semanticResults = performSemanticSearch(questionAnalysis, legalDataset, {
+      maxResults: 6,
+      minRelevanceScore: 0.4,
+      prioritizeDomain: primaryDomain
+    });
+    
+    // Combine both retrieval approaches
+    const allRelevantDocs = [...mergedDocuments, ...semanticResults]
+      .filter((doc, index, self) => 
+        index === self.findIndex(d => d.document.title === doc.document.title)
+      )
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 8);
 
     // Extract relevant passages for better context
     const relevantPassages = extractRelevantPassages(allRelevantDocs, questionAnalysis);
@@ -120,46 +77,14 @@ serve(async (req) => {
       allRelevantDocs.map(result => result.document)
     );
 
-    // Prepare context for improved AI response
-    const promptContext = {
-      query,
-      retrievedDocuments: allRelevantDocs,
-      jurisdiction,
-      legalDomain: primaryDomain || 'general',
-      questionAnalysis
-    };
-
-    // Generate AI response with enhanced context and validation
-    let aiResponse;
-    let apiStatus: "available" | "quota_exceeded" | "error" | null = null;
-    
-    try {
-      aiResponse = await generateImprovedLegalResponse(promptContext);
-      apiStatus = "available";
-    } catch (error) {
-      console.error('AI response generation failed:', error);
-      apiStatus = "error";
-      
-      // Generate fallback analysis using enhanced retrieval if available
-      if (usingSupabaseSearch && enhancedRetrievalData) {
-        const enhancedAnalysis = generateEnhancedAnalysis(enhancedRetrievalData, questionAnalysis);
-        aiResponse = {
-          recommendation: enhancedAnalysis.primaryAnalysis,
-          primaryAnalysis: enhancedAnalysis.primaryAnalysis,
-          secondaryAnalysis: enhancedAnalysis.secondaryAnalysis,
-          supportingEvidence: enhancedAnalysis.supportingEvidence,
-          quality: enhancedAnalysis.recommendationQuality
-        };
-      } else {
-        // Generate contextual fallback answer
-        const contextualAnswer = generateContextualAnswer(questionAnalysis, allRelevantDocs, relevantPassages);
-        aiResponse = {
-          recommendation: contextualAnswer,
-          primaryAnalysis: contextualAnswer,
-          secondaryAnalysis: "Additional legal research may be required for comprehensive analysis."
-        };
-      }
-    }
+    // Generate AI response with enhanced context
+    const aiResponse = await generateAILegalResponse(
+      query, 
+      primaryDomain, 
+      secondaryDomain, 
+      comparisonPrompt, 
+      jurisdiction
+    );
     
     // Extract relevant cases and statutes only from relevant domains
     const relevantPrimaryCases = primaryDomain && legalDataset[primaryDomain] ? 
@@ -171,6 +96,9 @@ serve(async (req) => {
     const relevantSecondaryStatutes = secondaryDomain && legalDataset[secondaryDomain] ? 
       findRelevantStatutes(query, legalDataset[secondaryDomain].statutes) : [];
 
+    // Generate contextual fallback answer if AI fails
+    const contextualAnswer = generateContextualAnswer(questionAnalysis, allRelevantDocs, relevantPassages);
+
     // Generate dynamic comparison analysis
     const dynamicComparison = generateDynamicComparison(
       comparisonCriteria,
@@ -178,37 +106,20 @@ serve(async (req) => {
       questionAnalysis
     );
 
-    // Enhance the response with improved retrieval and validation
+    // Enhance the response with dynamic comparison results
     const enhancedResponse = {
       query,
-      domains: [primaryDomain, secondaryDomain].filter(d => d),
+      domains: [primaryDomain, secondaryDomain].filter(d => d), // Remove null/undefined
       questionAnalysis,
       comparisonCriteria,
-      retrievalMetrics: usingSupabaseSearch ? {
-        searchStrategy: enhancedRetrievalData!.searchStrategy,
-        fallbackUsed: enhancedRetrievalData!.fallbackUsed,
-        supabaseMetrics: enhancedRetrievalData!.metrics,
-        finalDocs: allRelevantDocs.length,
-        avgRelevanceScore: allRelevantDocs.length > 0 
-          ? (allRelevantDocs.reduce((sum, doc) => sum + doc.relevanceScore, 0) / allRelevantDocs.length).toFixed(3)
-          : 0
-      } : {
-        hybridResults: allRelevantDocs.length,
-        finalDocs: allRelevantDocs.length,
-        avgRelevanceScore: allRelevantDocs.length > 0 
-          ? (allRelevantDocs.reduce((sum, doc) => sum + doc.relevanceScore, 0) / allRelevantDocs.length).toFixed(3)
-          : 0,
-        fallbackUsed: !usingSupabaseSearch
-      },
       dynamicDocuments: allRelevantDocs.slice(0, 5),
       aiResponse: {
         ...aiResponse,
-        recommendation: aiResponse.recommendation || dynamicComparison.primaryAnalysis,
+        recommendation: aiResponse.recommendation || contextualAnswer,
         primaryAnalysis: aiResponse.primaryAnalysis || dynamicComparison.primaryAnalysis,
-        secondaryAnalysis: aiResponse.secondaryAnalysis || dynamicComparison.secondaryAnalysis,
-        apiStatus
+        secondaryAnalysis: aiResponse.secondaryAnalysis || dynamicComparison.secondaryAnalysis
       },
-      recommendation: aiResponse.recommendation || dynamicComparison.primaryAnalysis,
+      recommendation: aiResponse.recommendation || contextualAnswer,
       technicalDetails: aiResponse.technicalDetails,
       comparison: buildComparisonResponse(
         primaryDomain, 
@@ -360,6 +271,7 @@ function groupDocumentsByContext(documents: any[], criteria: any) {
   const primary: any[] = [];
   const secondary: any[] = [];
   
+  // If we have specific doctrines in the query, focus on those
   const queryLower = criteria.primaryQuery.toLowerCase();
   
   documents.forEach(doc => {
