@@ -1,4 +1,3 @@
-
 // Hugging Face integration module for legal research
 
 const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
@@ -25,6 +24,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
 
   try {
     console.log("Generating AI response for query:", query.substring(0, 50) + "...");
+    console.log("Using Hugging Face token:", huggingFaceToken ? "Token present" : "Token missing");
 
     // Build the prompt by combining the system prompt and user query
     const fullPrompt = `${systemPrompt}\n\nAnalyze this legal query: "${query}"\n\nPlease format your response as a JSON object with the following fields: "recommendation", "primaryAnalysis", "secondaryAnalysis", and "technicalDetails".`;
@@ -33,7 +33,8 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       method: "POST",
       headers: {
         "Authorization": `Bearer ${huggingFaceToken}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "Supabase-Edge-Function"
       },
       body: JSON.stringify({
         inputs: fullPrompt,
@@ -50,14 +51,22 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       })
     });
 
-    const data = await response.json();
     console.log("Hugging Face response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      console.error("Hugging Face API error:", data);
+      const errorText = await response.text();
+      console.error("Hugging Face API error response:", errorText);
+
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (parseError) {
+        errorData = { error: errorText };
+      }
 
       // Handle rate limiting
-      if (response.status === 429 || data.error?.includes("rate limit")) {
+      if (response.status === 429 || errorData.error?.includes("rate limit")) {
         return {
           recommendation: "The AI legal analysis service is currently unavailable due to rate limiting. Please try again later.",
           primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
@@ -66,8 +75,22 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
         };
       }
 
-      throw new Error(`Hugging Face API error: ${data.error || "Unknown error"}`);
+      // Handle authentication errors
+      if (response.status === 401) {
+        console.error("Authentication failed with Hugging Face API");
+        return {
+          recommendation: "Authentication failed with the AI service. Please check the API configuration.",
+          primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
+          secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
+          error: "authentication_failed"
+        };
+      }
+
+      throw new Error(`Hugging Face API error (${response.status}): ${errorData.error || "Unknown error"}`);
     }
+
+    const data = await response.json();
+    console.log("Hugging Face response data:", JSON.stringify(data).substring(0, 200) + "...");
 
     // Parse the response from Hugging Face
     try {
@@ -81,6 +104,8 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       } else if (typeof data === 'string') {
         responseText = data;
       }
+      
+      console.log("Extracted response text:", responseText.substring(0, 100) + "...");
       
       // Try to extract JSON from the response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
