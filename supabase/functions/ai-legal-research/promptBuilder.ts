@@ -7,7 +7,7 @@
  * @param primaryDomain Primary legal domain for the query
  * @param secondaryDomain Secondary legal domain for the query
  * @param jurisdiction The jurisdiction context (e.g., "zambian", "general")
- * @returns Formatted system prompt for OpenAI
+ * @returns Formatted system prompt for Hugging Face
  */
 export function buildSystemPrompt(query: string, primaryDomain: string, secondaryDomain: string, jurisdiction: string): string {
   const systemPrompt = `You are an expert legal research assistant with extensive knowledge in ${primaryDomain} law and ${secondaryDomain} law.

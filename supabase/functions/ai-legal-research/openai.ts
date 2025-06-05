@@ -1,22 +1,22 @@
 
-// Gemini integration module for legal research
+// Hugging Face integration module for legal research
 
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 
 /**
- * Generate AI-powered legal response using Google's Gemini
+ * Generate AI-powered legal response using Hugging Face
  * @param query The user's legal query
  * @param primaryDomain Primary legal domain for the query
  * @param secondaryDomain Secondary legal domain for the query
- * @param systemPrompt The system prompt for the Gemini model
+ * @param systemPrompt The system prompt for the model
  * @param jurisdiction The jurisdiction context (e.g., "zambian", "general")
  * @returns Legal analysis and recommendation
  */
 export async function generateAILegalResponse(query: string, primaryDomain: string, secondaryDomain: string, systemPrompt: string, jurisdiction: string) {
-  if (!geminiApiKey) {
-    console.error("Missing Gemini API key");
+  if (!huggingFaceToken) {
+    console.error("Missing Hugging Face access token");
     return {
-      recommendation: "Unable to generate AI recommendation. Please check that the Gemini API key is configured.",
+      recommendation: "Unable to generate AI recommendation. Please check that the Hugging Face access token is configured.",
       primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
       secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
       error: "missing_api_key"
@@ -26,79 +26,94 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
   try {
     console.log("Generating AI response for query:", query.substring(0, 50) + "...");
 
-    // Gemini API endpoint
-    const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-    
-    // Construct the full URL with API key
-    const url = `${apiUrl}?key=${geminiApiKey}`;
-    
     // Build the prompt by combining the system prompt and user query
     const fullPrompt = `${systemPrompt}\n\nAnalyze this legal query: "${query}"\n\nPlease format your response as a JSON object with the following fields: "recommendation", "primaryAnalysis", "secondaryAnalysis", and "technicalDetails".`;
     
-    const response = await fetch(url, {
+    const response = await fetch("https://api-inference.huggingface.co/models/microsoft/DialoGPT-large", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${huggingFaceToken}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: fullPrompt }
-            ]
-          }
-        ],
-        generationConfig: {
+        inputs: fullPrompt,
+        parameters: {
+          max_new_tokens: 2000,
           temperature: 0.7,
-          maxOutputTokens: 2000,
-          topP: 0.95,
-          topK: 40
+          top_p: 0.95,
+          do_sample: true,
+          return_full_text: false
+        },
+        options: {
+          wait_for_model: true
         }
       })
     });
 
     const data = await response.json();
-    console.log("AI response status:", response.status);
+    console.log("Hugging Face response status:", response.status);
 
     if (!response.ok) {
-      console.error("Gemini API error:", data);
+      console.error("Hugging Face API error:", data);
 
-      // Handle quota exceeded error specifically
-      if (response.status === 429 || data.error?.code === 429) {
+      // Handle rate limiting
+      if (response.status === 429 || data.error?.includes("rate limit")) {
         return {
-          recommendation: "The AI legal analysis service is currently unavailable due to API quota limitations. Please try again later or contact support to upgrade the API plan.",
+          recommendation: "The AI legal analysis service is currently unavailable due to rate limiting. Please try again later.",
           primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
           secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
-          error: "quota_exceeded"
+          error: "rate_limit_exceeded"
         };
       }
 
-      throw new Error(`Gemini API error: ${data.error?.message || "Unknown error"}`);
+      throw new Error(`Hugging Face API error: ${data.error || "Unknown error"}`);
     }
 
-    // Parse the JSON from the AI response
+    // Parse the response from Hugging Face
     try {
-      // Extract text content from Gemini response structure
-      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      let responseText = "";
       
-      // Extract the JSON object from the response text
+      // Handle different response formats from Hugging Face
+      if (Array.isArray(data) && data.length > 0) {
+        responseText = data[0].generated_text || data[0].text || "";
+      } else if (data.generated_text) {
+        responseText = data.generated_text;
+      } else if (typeof data === 'string') {
+        responseText = data;
+      }
+      
+      // Try to extract JSON from the response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : '{}';
-      const parsedResponse = JSON.parse(jsonString);
+      if (jsonMatch) {
+        const jsonString = jsonMatch[0];
+        const parsedResponse = JSON.parse(jsonString);
 
-      return {
-        recommendation: parsedResponse.recommendation || "Analysis completed successfully.",
-        primaryAnalysis: parsedResponse.primaryAnalysis || generateFallbackAnalysis(primaryDomain, query),
-        secondaryAnalysis: parsedResponse.secondaryAnalysis || generateFallbackAnalysis(secondaryDomain, query),
-        technicalDetails: parsedResponse.technicalDetails
-      };
+        return {
+          recommendation: parsedResponse.recommendation || "Analysis completed successfully.",
+          primaryAnalysis: parsedResponse.primaryAnalysis || generateFallbackAnalysis(primaryDomain, query),
+          secondaryAnalysis: parsedResponse.secondaryAnalysis || generateFallbackAnalysis(secondaryDomain, query),
+          technicalDetails: parsedResponse.technicalDetails
+        };
+      } else {
+        // Fallback to using the raw text if no JSON found
+        return {
+          recommendation: responseText.substring(0, 500) || "Analysis completed successfully.",
+          primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
+          secondaryAnalysis: generateFallbackAnalysis(secondaryDomain, query),
+          error: "parse_error"
+        };
+      }
     } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
+      console.error("Failed to parse Hugging Face response:", parseError);
       
-      // Get the raw text from the Gemini response
-      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated";
+      // Get the raw text from the response
+      let responseText = "";
+      if (Array.isArray(data) && data.length > 0) {
+        responseText = data[0].generated_text || data[0].text || "No response generated";
+      } else {
+        responseText = "No response generated";
+      }
       
-      // Fallback to directly using the text
       return {
         recommendation: responseText.substring(0, 500),
         primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
@@ -107,7 +122,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
       };
     }
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
+    console.error("Error calling Hugging Face API:", error);
     return {
       recommendation: "An error occurred while generating the legal analysis. Please try again.",
       primaryAnalysis: generateFallbackAnalysis(primaryDomain, query),
@@ -118,7 +133,7 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
 }
 
 /**
- * Generate fallback analysis when Gemini API is unavailable
+ * Generate fallback analysis when Hugging Face API is unavailable
  * @param domain The legal domain
  * @param query The user's query
  * @returns A basic domain-specific analysis
