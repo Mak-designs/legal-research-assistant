@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,10 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
 
   if (!results) return null;
 
+  // Check if we have AI-generated analysis
+  const hasAIAnalysis = results.aiResponse && !results.aiResponse.error;
+  const hasAuthError = results.aiResponse?.error === "authentication_failed";
+
   // Enhanced relevance detection
   const isZambianLaw = results.domains?.includes('zambian') || results.query?.toLowerCase().includes('zambia') || results.query?.toLowerCase().includes('zambian');
   const isDigitalEvidence = results.domains?.includes('cyberSecurity') || results.technicalDetails !== undefined;
@@ -71,20 +76,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
   const isCriminal = results.domains?.includes('criminal');
 
   // Format the recommendation with better styling if it's from the AI
-  const formattedRecommendation = results.aiResponse?.recommendation || results.recommendation;
-
-  // Format the case title for display
-  const formatCaseDisplay = (caseText: string) => {
-    if (!caseText) return "";
-
-    // Split by colon to separate title/citation from description
-    const parts = caseText.split(": ");
-    if (parts.length < 2) return caseText;
-    return <div className="mb-2">
-        <div className="font-medium">{parts[0]}</div>
-        <div className="text-sm text-slate-600">{parts[1]}</div>
-      </div>;
-  };
+  const formattedRecommendation = hasAIAnalysis ? results.aiResponse.recommendation : results.recommendation;
 
   // Format domain names for display
   const getDomainDisplayName = (domain: string) => {
@@ -100,8 +92,25 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
     return domainMap[domain] || domain.charAt(0).toUpperCase() + domain.slice(1);
   };
 
+  // Get the primary and secondary analysis - prefer AI over fallback
+  const primaryAnalysis = hasAIAnalysis ? 
+    results.aiResponse.primaryAnalysis : 
+    results.comparison.commonLaw.analysis;
+    
+  const secondaryAnalysis = hasAIAnalysis ? 
+    results.aiResponse.secondaryAnalysis : 
+    results.comparison.contractLaw.analysis;
+
   return <Card className="shadow-sm">
       <CardContent className="pt-6 space-y-4">
+        {hasAuthError && <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              AI analysis is currently unavailable due to authentication issues. Please check the Hugging Face API configuration. 
+              You're viewing standard legal analysis instead.
+            </AlertDescription>
+          </Alert>}
+
         {apiStatus === "quota_exceeded" && <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
@@ -110,11 +119,20 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </AlertDescription>
           </Alert>}
 
+        {hasAIAnalysis && <Alert className="bg-green-50 border-green-200">
+            <AlertTriangle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ✨ This analysis was generated using advanced AI to provide personalized insights for your specific query.
+            </AlertDescription>
+          </Alert>}
+
         {/* Case header with query as title */}
         <div className="border-b pb-4">
           <h2 className="text-xl font-semibold">{results.query}</h2>
           <div className="flex flex-wrap gap-2 mt-2">
-            <div className="text-sm text-gray-500">Court Analysis</div>
+            <div className="text-sm text-gray-500">
+              {hasAIAnalysis ? "AI-Powered Legal Analysis" : "Court Analysis"}
+            </div>
             <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
           </div>
         </div>
@@ -144,28 +162,43 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
 
         <div className="space-y-6">
           {/* Primary domain analysis */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3">
+          <div className={`border rounded-lg p-5 ${hasAIAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+            <h4 className="font-medium text-lg mb-3 flex items-center">
+              {hasAIAnalysis && <span className="text-blue-600 mr-2">🤖</span>}
               {getDomainDisplayName(results.domains?.[0])} Analysis
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-800 whitespace-pre-line leading-relaxed">
-                {results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis}
+                {primaryAnalysis}
               </p>
             </div>
           </div>
           
           {/* Secondary domain analysis */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5">
-            <h4 className="font-medium text-lg mb-3">
+          <div className={`border rounded-lg p-5 ${hasAIAnalysis ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
+            <h4 className="font-medium text-lg mb-3 flex items-center">
+              {hasAIAnalysis && <span className="text-green-600 mr-2">🤖</span>}
               {getDomainDisplayName(results.domains?.[1])} Perspective
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-700 whitespace-pre-line leading-relaxed">
-                {results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis}
+                {secondaryAnalysis}
               </p>
             </div>
           </div>
+
+          {/* AI Recommendation section */}
+          {hasAIAnalysis && formattedRecommendation && (
+            <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+              <h4 className="font-medium mb-2 flex items-center">
+                <span className="text-blue-600 mr-2">💡</span>
+                AI Legal Recommendation
+              </h4>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                {formattedRecommendation}
+              </p>
+            </div>
+          )}
           
           {isDigitalEvidence && <div className="border-l-4 border-green-500 pl-4 py-2 bg-slate-50">
               <h4 className="font-medium mb-2 flex items-center">

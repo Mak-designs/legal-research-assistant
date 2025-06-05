@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Book, Shield, FileDigit, History, Scale, Gavel, Landmark, Globe } from "lucide-react";
@@ -8,6 +9,9 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
   results
 }) => {
   if (!results) return null;
+
+  // Check if we have AI-generated analysis
+  const hasAIAnalysis = results.aiResponse && !results.aiResponse.error;
 
   // Determine domain display names
   const domainDisplayNames = {
@@ -45,16 +49,34 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
   };
 
   // Use AI analysis if available, otherwise fall back to the default analysis
-  const primaryAnalysis = results.aiResponse?.primaryAnalysis || results.comparison.commonLaw.analysis;
-  const secondaryAnalysis = results.aiResponse?.secondaryAnalysis || results.comparison.contractLaw.analysis;
+  const primaryAnalysis = hasAIAnalysis ? 
+    results.aiResponse.primaryAnalysis : 
+    results.comparison.commonLaw.analysis;
+    
+  const secondaryAnalysis = hasAIAnalysis ? 
+    results.aiResponse.secondaryAnalysis : 
+    results.comparison.contractLaw.analysis;
+
   return <Card>
       <CardContent className="pt-6 space-y-4">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">Query</h3>
           <p className="text-muted-foreground">{results.query}</p>
         </div>
-        
-        
+
+        {/* Analysis Source Indicator */}
+        {hasAIAnalysis && (
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center mb-2">
+              <span className="text-2xl mr-2">🤖</span>
+              <h4 className="text-lg font-semibold text-blue-800">AI-Generated Analysis</h4>
+            </div>
+            <p className="text-sm text-blue-700">
+              This detailed analysis was generated using advanced AI technology to provide personalized insights 
+              specific to your legal query, going beyond standard template responses.
+            </p>
+          </div>
+        )}
         
         {/* Display technical details for digital evidence if available */}
         {results.technicalDetails && <div className="space-y-4 border p-4 rounded-md bg-slate-50">
@@ -108,70 +130,97 @@ const DetailedAnalysisTab: React.FC<DetailedAnalysisTabProps> = ({
           </div>}
         
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold flex items-center">
+          <h3 className={`text-xl font-semibold flex items-center ${hasAIAnalysis ? 'text-blue-800' : ''}`}>
             {getDomainIcon(results.domains?.[0])}
+            {hasAIAnalysis && <span className="text-blue-600 mr-2">🤖</span>}
             {primaryDomainName} Analysis
           </h3>
-          <div className="prose max-w-none">
-            <p className="whitespace-pre-line">{primaryAnalysis}</p>
+          <div className={`prose max-w-none p-4 rounded-lg ${hasAIAnalysis ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+            <p className="whitespace-pre-line leading-relaxed">{primaryAnalysis}</p>
           </div>
           
-          {results.comparison.commonLaw.principles && <>
+          {/* Only show predefined principles and cases if we don't have AI analysis */}
+          {!hasAIAnalysis && results.comparison.commonLaw.principles && <>
               <h4 className="text-lg font-medium mt-2">Key Principles</h4>
               <ul className="list-disc list-inside space-y-1">
                 {results.comparison.commonLaw.principles.map((principle: string, index: number) => <li key={index} className="text-sm">{principle}</li>).slice(0, 4)}
               </ul>
             </>}
           
-          <h4 className="text-lg font-medium mt-3 flex items-center">
-            <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-            Relevant Cases
-          </h4>
-          <ul className="list-disc list-inside space-y-1.5">
-            {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
-          </ul>
-          
-          <h4 className="text-lg font-medium mt-3 flex items-center">
-            <Book className="mr-2 h-4 w-4 text-muted-foreground" />
-            Relevant Statutes
-          </h4>
-          <ul className="list-disc list-inside space-y-1.5">
-            {results.comparison.commonLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
-          </ul>
+          {!hasAIAnalysis && (
+            <>
+              <h4 className="text-lg font-medium mt-3 flex items-center">
+                <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+                Relevant Cases
+              </h4>
+              <ul className="list-disc list-inside space-y-1.5">
+                {results.comparison.commonLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
+              </ul>
+              
+              <h4 className="text-lg font-medium mt-3 flex items-center">
+                <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+                Relevant Statutes
+              </h4>
+              <ul className="list-disc list-inside space-y-1.5">
+                {results.comparison.commonLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
+              </ul>
+            </>
+          )}
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold flex items-center">
+          <h3 className={`text-xl font-semibold flex items-center ${hasAIAnalysis ? 'text-green-800' : ''}`}>
             {getDomainIcon(results.domains?.[1])}
+            {hasAIAnalysis && <span className="text-green-600 mr-2">🤖</span>}
             {secondaryDomainName} Analysis
           </h3>
-          <div className="prose max-w-none">
-            <p className="whitespace-pre-line">{secondaryAnalysis}</p>
+          <div className={`prose max-w-none p-4 rounded-lg ${hasAIAnalysis ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+            <p className="whitespace-pre-line leading-relaxed">{secondaryAnalysis}</p>
           </div>
           
-          {results.comparison.contractLaw.principles && <>
+          {/* Only show predefined principles and cases if we don't have AI analysis */}
+          {!hasAIAnalysis && results.comparison.contractLaw.principles && <>
               <h4 className="text-lg font-medium mt-2">Key Principles</h4>
               <ul className="list-disc list-inside space-y-1">
                 {results.comparison.contractLaw.principles.map((principle: string, index: number) => <li key={index} className="text-sm">{principle}</li>).slice(0, 4)}
               </ul>
             </>}
           
-          <h4 className="text-lg font-medium mt-3 flex items-center">
-            <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-            Relevant Cases
-          </h4>
-          <ul className="list-disc list-inside space-y-1.5">
-            {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
-          </ul>
-          
-          <h4 className="text-lg font-medium mt-3 flex items-center">
-            <Book className="mr-2 h-4 w-4 text-muted-foreground" />
-            Relevant Statutes
-          </h4>
-          <ul className="list-disc list-inside space-y-1.5">
-            {results.comparison.contractLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
-          </ul>
+          {!hasAIAnalysis && (
+            <>
+              <h4 className="text-lg font-medium mt-3 flex items-center">
+                <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+                Relevant Cases
+              </h4>
+              <ul className="list-disc list-inside space-y-1.5">
+                {results.comparison.contractLaw.caseExamples.map((example: string, index: number) => <li key={index} className="text-sm">{example}</li>)}
+              </ul>
+              
+              <h4 className="text-lg font-medium mt-3 flex items-center">
+                <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+                Relevant Statutes
+              </h4>
+              <ul className="list-disc list-inside space-y-1.5">
+                {results.comparison.contractLaw.statutes?.map((statute: string, index: number) => <li key={index} className="text-sm">{statute}</li>)}
+              </ul>
+            </>
+          )}
         </div>
+
+        {/* AI Recommendation section for detailed view */}
+        {hasAIAnalysis && results.aiResponse.recommendation && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+            <h3 className="text-xl font-semibold flex items-center mb-4">
+              <span className="text-purple-600 mr-2">💡</span>
+              AI Legal Recommendation
+            </h3>
+            <div className="prose max-w-none">
+              <p className="text-purple-800 leading-relaxed whitespace-pre-line">
+                {results.aiResponse.recommendation}
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>;
 };
