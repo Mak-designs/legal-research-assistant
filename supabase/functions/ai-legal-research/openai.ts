@@ -1,4 +1,3 @@
-
 // Hugging Face integration module for legal research
 
 const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
@@ -73,7 +72,21 @@ async function testHuggingFaceConnection(): Promise<{ success: boolean; error?: 
  * @param jurisdiction The jurisdiction context (e.g., "zambian", "general")
  * @returns Legal analysis and recommendation
  */
-export async function generateAILegalResponse(query: string, primaryDomain: string, secondaryDomain: string, systemPrompt: string, jurisdiction: string) {
+export async function generateAILegalResponse(
+  query: string, 
+  primaryDomain: string, 
+  secondaryDomain: string, 
+  systemPrompt: string, 
+  jurisdiction: string,
+  legalContext?: {
+    primaryCases: any[];
+    primaryStatutes: any[];
+    primaryPrinciples: string[];
+    secondaryCases: any[];
+    secondaryStatutes: any[];
+    secondaryPrinciples: string[];
+  }
+) {
   // Step 1: Validate token
   const tokenValidation = validateHuggingFaceToken();
   if (!tokenValidation.isValid) {
@@ -100,23 +113,11 @@ export async function generateAILegalResponse(query: string, primaryDomain: stri
     };
   }
 
-  console.log("API connection test successful. Generating legal analysis...");
+  console.log("API connection test successful. Generating legal analysis with real HuggingFace dataset context...");
 
   try {
-    // Build a more specific prompt for legal analysis
-    const legalPrompt = `You are a legal research assistant. Analyze this query and provide detailed legal insights.
-
-Query: "${query}"
-Primary Legal Domain: ${primaryDomain}
-Secondary Legal Domain: ${secondaryDomain}
-Jurisdiction: ${jurisdiction}
-
-Please provide:
-1. A comprehensive analysis from the ${primaryDomain} perspective
-2. A secondary analysis from the ${secondaryDomain} perspective  
-3. A practical recommendation based on both analyses
-
-Format your response as structured legal analysis:`;
+    // Build enhanced prompt with real legal context from HuggingFace datasets
+    const enhancedPrompt = buildEnhancedLegalPrompt(query, primaryDomain, secondaryDomain, jurisdiction, legalContext);
 
     // Try multiple models in order of preference
     const models = [
@@ -129,7 +130,7 @@ Format your response as structured legal analysis:`;
     
     for (const model of models) {
       try {
-        console.log(`Attempting to use model: ${model}`);
+        console.log(`Attempting to use model: ${model} with HuggingFace legal dataset context`);
         
         const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
           method: "POST",
@@ -139,9 +140,9 @@ Format your response as structured legal analysis:`;
             "User-Agent": "Supabase-Edge-Function/1.0"
           },
           body: JSON.stringify({
-            inputs: legalPrompt,
+            inputs: enhancedPrompt,
             parameters: {
-              max_new_tokens: 1000,
+              max_new_tokens: 1200,
               temperature: 0.7,
               top_p: 0.9,
               do_sample: true,
@@ -165,7 +166,7 @@ Format your response as structured legal analysis:`;
         }
 
         const data = await response.json();
-        console.log(`Model ${model} response received:`, JSON.stringify(data).substring(0, 100) + "...");
+        console.log(`Model ${model} response received with HuggingFace context:`, JSON.stringify(data).substring(0, 100) + "...");
 
         // Parse the response
         let responseText = "";
@@ -178,13 +179,11 @@ Format your response as structured legal analysis:`;
         }
 
         if (responseText && responseText.length > 10) {
-          // Parse the structured response or create structured output
-          const sections = responseText.split(/\d+\.|Primary|Secondary|Recommendation/i);
-          
+          // Parse the structured response with enhanced context
           return {
             recommendation: extractRecommendation(responseText, query),
-            primaryAnalysis: extractPrimaryAnalysis(responseText, primaryDomain) || generateEnhancedFallbackAnalysis(primaryDomain, query, responseText),
-            secondaryAnalysis: extractSecondaryAnalysis(responseText, secondaryDomain) || generateEnhancedFallbackAnalysis(secondaryDomain, query, responseText),
+            primaryAnalysis: extractPrimaryAnalysis(responseText, primaryDomain) || generateEnhancedFallbackAnalysis(primaryDomain, query, responseText, legalContext?.primaryCases),
+            secondaryAnalysis: extractSecondaryAnalysis(responseText, secondaryDomain) || generateEnhancedFallbackAnalysis(secondaryDomain, query, responseText, legalContext?.secondaryCases),
             technicalDetails: extractTechnicalDetails(query, responseText)
           };
         }
@@ -207,6 +206,89 @@ Format your response as structured legal analysis:`;
       error: "processing_error"
     };
   }
+}
+
+/**
+ * Build enhanced legal prompt with real HuggingFace dataset context
+ */
+function buildEnhancedLegalPrompt(
+  query: string, 
+  primaryDomain: string, 
+  secondaryDomain: string, 
+  jurisdiction: string,
+  legalContext?: {
+    primaryCases: any[];
+    primaryStatutes: any[];
+    primaryPrinciples: string[];
+    secondaryCases: any[];
+    secondaryStatutes: any[];
+    secondaryPrinciples: string[];
+  }
+): string {
+  let prompt = `You are a legal research assistant. Analyze this query using real legal precedents and statutes.
+
+Query: "${query}"
+Primary Legal Domain: ${primaryDomain}
+Secondary Legal Domain: ${secondaryDomain}
+Jurisdiction: ${jurisdiction}
+
+`;
+
+  // Add real legal context from HuggingFace datasets
+  if (legalContext) {
+    if (legalContext.primaryCases.length > 0) {
+      prompt += `Relevant ${primaryDomain} Cases from Legal Database:
+`;
+      legalContext.primaryCases.forEach(c => {
+        prompt += `- ${c.title} (${c.citation}): ${c.description}
+`;
+      });
+      prompt += `
+`;
+    }
+
+    if (legalContext.primaryStatutes.length > 0) {
+      prompt += `Relevant ${primaryDomain} Statutes:
+`;
+      legalContext.primaryStatutes.forEach(s => {
+        prompt += `- ${s.title} (${s.citation}): ${s.description}
+`;
+      });
+      prompt += `
+`;
+    }
+
+    if (legalContext.primaryPrinciples.length > 0) {
+      prompt += `Key ${primaryDomain} Legal Principles:
+`;
+      legalContext.primaryPrinciples.forEach(p => {
+        prompt += `- ${p}
+`;
+      });
+      prompt += `
+`;
+    }
+
+    if (legalContext.secondaryCases.length > 0) {
+      prompt += `Related ${secondaryDomain} Cases:
+`;
+      legalContext.secondaryCases.forEach(c => {
+        prompt += `- ${c.title} (${c.citation}): ${c.description}
+`;
+      });
+      prompt += `
+`;
+    }
+  }
+
+  prompt += `Please provide:
+1. A comprehensive analysis from the ${primaryDomain} perspective using the provided cases and statutes
+2. A secondary analysis from the ${secondaryDomain} perspective 
+3. A practical recommendation based on both analyses and real legal precedents
+
+Format your response as structured legal analysis:`;
+
+  return prompt;
 }
 
 /**
@@ -292,15 +374,28 @@ function extractTechnicalDetails(query: string, text: string): any {
 }
 
 /**
- * Generate enhanced fallback analysis using AI context
+ * Generate enhanced fallback analysis using real legal context
  */
-function generateEnhancedFallbackAnalysis(domain: string, query: string, aiContext: string): string {
-  const baseAnalysis = generateFallbackAnalysis(domain, query);
+function generateEnhancedFallbackAnalysis(domain: string, query: string, aiContext: string, realCases?: any[]): string {
+  let baseAnalysis = generateFallbackAnalysis(domain, query);
+  
+  // Enhance with real case context if available
+  if (realCases && realCases.length > 0) {
+    baseAnalysis += `
+
+Relevant precedents from legal database:`;
+    realCases.slice(0, 2).forEach(c => {
+      baseAnalysis += `
+- ${c.title} (${c.citation}): ${c.description}`;
+    });
+  }
   
   if (aiContext && aiContext.length > 50) {
     // Try to incorporate some AI context
     const relevantParts = aiContext.substring(0, 200).replace(/[^\w\s.,!?]/g, '');
-    return `${baseAnalysis}\n\nAdditional context: ${relevantParts}...`;
+    baseAnalysis += `
+
+Additional context: ${relevantParts}...`;
   }
   
   return baseAnalysis;
