@@ -7,7 +7,7 @@ import {
   fetchLegalCasesFromHF, 
   fetchLegalStatutesFromHF, 
   fetchLegalPrinciplesFromHF 
-} from "../ai-legal-research/huggingFaceDataset.ts";
+} from "./huggingFaceDataset.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
