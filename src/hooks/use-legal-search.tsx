@@ -27,17 +27,27 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Use the enhanced Zambian legal research function
-      const { data, error } = await supabase.functions.invoke('zambian-legal-research', {
+      // Enhance the query with Zambian law context
+      let enhancedQuery = `Zambian law: ${query}`;
+      
+      // Add specific keywords for digital evidence if relevant
+      if (query.toLowerCase().includes('evidence') || 
+          query.toLowerCase().includes('digital') || 
+          query.toLowerCase().includes('electronic')) {
+        enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
+      }
+      
+      // Use the AI-powered legal research function
+      const { data, error } = await supabase.functions.invoke('ai-legal-research', {
         body: { 
-          query: query,
+          query: enhancedQuery,
           jurisdiction: "zambian"
         }
       });
       
       if (error) throw error;
       
-      console.log("Zambian legal research results:", data);
+      console.log("AI legal research results:", data);
       
       // Check for API status in the response
       if (data.aiResponse?.error === "quota_exceeded") {
@@ -57,7 +67,8 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
           await supabase.from('search_history').insert({
             query: `[Zambian] ${query}`,
             user_id: session.user.id,
-            results_count: data.zambianCases?.length || 0 + data.zambianStatutes?.length || 0
+            results_count: data.comparison.commonLaw.caseExamples.length + 
+                          data.comparison.contractLaw.caseExamples.length
           });
         } catch (historyError) {
           console.error("Failed to save search history:", historyError);
@@ -70,6 +81,46 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       console.error("Search error:", error);
       toast.error("Analysis failed. Please try again later.");
       setApiStatus("error");
+      
+      // Fallback to the original legal-search function if AI function fails
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        let enhancedQuery = `Zambian law: ${query}`;
+        
+        if (query.toLowerCase().includes('evidence') || 
+            query.toLowerCase().includes('digital') || 
+            query.toLowerCase().includes('electronic')) {
+          enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
+        }
+        
+        const { data, error } = await supabase.functions.invoke('legal-search', {
+          body: { 
+            query: enhancedQuery
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (session?.user) {
+          try {
+            await supabase.from('search_history').insert({
+              query: `[Zambian] ${query} (fallback)`,
+              user_id: session.user.id,
+              results_count: data.comparison.commonLaw.caseExamples.length + 
+                            data.comparison.contractLaw.caseExamples.length
+            });
+          } catch (historyError) {
+            console.error("Failed to save search history:", historyError);
+          }
+        }
+        
+        setResults(data);
+        toast.success("Analysis complete (standard mode)!");
+      } catch (fallbackError) {
+        console.error("Fallback search error:", fallbackError);
+        toast.error("All analysis methods failed. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }
