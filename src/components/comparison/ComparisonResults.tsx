@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle } from "lucide-react";
+import { Save, Trash2, FileDigit, Globe, BookOpen, AlertTriangle, Brain } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -68,6 +67,7 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
   // Check if we have AI-generated analysis
   const hasAIAnalysis = results.aiResponse && !results.aiResponse.error;
   const hasAuthError = results.aiResponse?.error === "authentication_failed";
+  const hasInLegalBERTEnhancement = results.semanticAnalysis && results.dataSource === "huggingface_inlegalbert";
 
   // Enhanced relevance detection
   const isZambianLaw = results.domains?.includes('zambian') || results.query?.toLowerCase().includes('zambia') || results.query?.toLowerCase().includes('zambian');
@@ -119,7 +119,21 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
             </AlertDescription>
           </Alert>}
 
-        {hasAIAnalysis && <Alert className="bg-green-50 border-green-200">
+        {hasInLegalBERTEnhancement && <Alert className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+            <Brain className="h-4 w-4 text-purple-600" />
+            <AlertDescription className="text-purple-800">
+              ✨ <strong>InLegalBERT Enhanced Analysis</strong> - This analysis uses specialized legal AI trained on 5.4M Indian legal documents 
+              for superior legal text understanding and relevance scoring.
+              <div className="mt-2 text-sm">
+                <strong>Detected Domain:</strong> {results.semanticAnalysis?.inLegalBERTDomain} 
+                <span className="ml-2 text-purple-600">
+                  (Confidence: {(results.semanticAnalysis?.confidence * 100).toFixed(1)}%)
+                </span>
+              </div>
+            </AlertDescription>
+          </Alert>}
+
+        {hasAIAnalysis && !hasInLegalBERTEnhancement && <Alert className="bg-green-50 border-green-200">
             <AlertTriangle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               ✨ This analysis was generated using advanced AI to provide personalized insights for your specific query.
@@ -131,9 +145,15 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
           <h2 className="text-xl font-semibold">{results.query}</h2>
           <div className="flex flex-wrap gap-2 mt-2">
             <div className="text-sm text-gray-500">
-              {hasAIAnalysis ? "AI-Powered Legal Analysis" : "Court Analysis"}
+              {hasInLegalBERTEnhancement ? "InLegalBERT Enhanced AI Analysis" : 
+               hasAIAnalysis ? "AI-Powered Legal Analysis" : "Court Analysis"}
             </div>
             <div className="text-sm text-gray-500">Date: {new Date().toLocaleDateString()}</div>
+            {hasInLegalBERTEnhancement && (
+              <div className="text-sm text-purple-600 font-medium">
+                Semantic Relevance Scoring Applied
+              </div>
+            )}
           </div>
         </div>
         
@@ -151,21 +171,66 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
           </div>
         </div>
         
-        {/* Domain badges */}
+        {/* Domain badges with InLegalBERT enhancement indicator */}
         <div className="flex flex-wrap gap-2">
-          {results.domains && results.domains.map((domain: string, index: number) => <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-              ${domain === 'zambian' ? 'bg-blue-100 text-blue-800' : domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' : domain === 'constitutional' ? 'bg-purple-100 text-purple-800' : domain === 'criminal' ? 'bg-red-100 text-red-800' : domain === 'property' ? 'bg-amber-100 text-amber-800' : domain === 'contract' ? 'bg-indigo-100 text-indigo-800' : domain === 'tort' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>
-              {domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> : <BookOpen className="h-3 w-3 mr-1" />}
+          {results.domains && results.domains.map((domain: string, index: number) => 
+            <div key={index} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              ${hasInLegalBERTEnhancement ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                domain === 'zambian' ? 'bg-blue-100 text-blue-800' : 
+                domain === 'cyberSecurity' ? 'bg-green-100 text-green-800' : 
+                domain === 'constitutional' ? 'bg-purple-100 text-purple-800' : 
+                domain === 'criminal' ? 'bg-red-100 text-red-800' : 
+                domain === 'property' ? 'bg-amber-100 text-amber-800' : 
+                domain === 'contract' ? 'bg-indigo-100 text-indigo-800' : 
+                domain === 'tort' ? 'bg-orange-100 text-orange-800' : 
+                'bg-gray-100 text-gray-800'}`}>
+              {hasInLegalBERTEnhancement ? <Brain className="h-3 w-3 mr-1" /> :
+               domain === 'zambian' ? <Globe className="h-3 w-3 mr-1" /> : 
+               domain === 'cyberSecurity' ? <FileDigit className="h-3 w-3 mr-1" /> : 
+               <BookOpen className="h-3 w-3 mr-1" />}
               {getDomainDisplayName(domain)}
-            </div>)}
+              {hasInLegalBERTEnhancement && <span className="ml-1 text-xs">AI+</span>}
+            </div>
+          )}
+          {hasInLegalBERTEnhancement && results.semanticAnalysis?.inLegalBERTDomain && (
+            <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gradient-to-r from-purple-100 to-blue-100 text-purple-800 border border-purple-300">
+              <Brain className="h-3 w-3 mr-1" />
+              InLegalBERT: {results.semanticAnalysis.inLegalBERTDomain}
+            </div>
+          )}
         </div>
+
+        {/* InLegalBERT Semantic Analysis */}
+        {hasInLegalBERTEnhancement && results.semanticAnalysis?.semanticSegments && (
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="font-medium text-lg mb-2 flex items-center text-purple-800">
+              <Brain className="h-4 w-4 mr-2" />
+              InLegalBERT Semantic Analysis
+            </h4>
+            <div className="text-sm text-purple-700">
+              <div className="mb-2">
+                <strong>Identified Segments:</strong>
+              </div>
+              <ul className="list-disc list-inside space-y-1">
+                {results.semanticAnalysis.semanticSegments.map((segment: string, index: number) => (
+                  <li key={index} className="text-purple-600">{segment}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Primary domain analysis */}
-          <div className={`border rounded-lg p-5 ${hasAIAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+          <div className={`border rounded-lg p-5 ${
+            hasInLegalBERTEnhancement ? 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200' :
+            hasAIAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'
+          }`}>
             <h4 className="font-medium text-lg mb-3 flex items-center">
-              {hasAIAnalysis && <span className="text-blue-600 mr-2">🤖</span>}
+              {hasInLegalBERTEnhancement && <Brain className="text-purple-600 mr-2 h-4 w-4" />}
+              {hasAIAnalysis && !hasInLegalBERTEnhancement && <span className="text-blue-600 mr-2">🤖</span>}
               {getDomainDisplayName(results.domains?.[0])} Analysis
+              {hasInLegalBERTEnhancement && <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Enhanced</span>}
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-800 whitespace-pre-line leading-relaxed">
@@ -175,10 +240,15 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
           </div>
           
           {/* Secondary domain analysis */}
-          <div className={`border rounded-lg p-5 ${hasAIAnalysis ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-lg p-5 ${
+            hasInLegalBERTEnhancement ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
+            hasAIAnalysis ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'
+          }`}>
             <h4 className="font-medium text-lg mb-3 flex items-center">
-              {hasAIAnalysis && <span className="text-green-600 mr-2">🤖</span>}
+              {hasInLegalBERTEnhancement && <Brain className="text-green-600 mr-2 h-4 w-4" />}
+              {hasAIAnalysis && !hasInLegalBERTEnhancement && <span className="text-green-600 mr-2">🤖</span>}
               {getDomainDisplayName(results.domains?.[1])} Perspective
+              {hasInLegalBERTEnhancement && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Enhanced</span>}
             </h4>
             <div className="prose max-w-none">
               <p className="text-slate-700 whitespace-pre-line leading-relaxed">
@@ -189,12 +259,19 @@ const ComparisonResults: React.FC<ComparisonResultsProps> = ({
 
           {/* AI Recommendation section */}
           {hasAIAnalysis && formattedRecommendation && (
-            <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+            <div className={`border-l-4 pl-4 py-2 ${
+              hasInLegalBERTEnhancement ? 'border-purple-500 bg-purple-50' : 'border-blue-500 bg-blue-50'
+            }`}>
               <h4 className="font-medium mb-2 flex items-center">
-                <span className="text-blue-600 mr-2">💡</span>
-                AI Legal Recommendation
+                {hasInLegalBERTEnhancement ? 
+                  <Brain className="text-purple-600 mr-2 h-4 w-4" /> :
+                  <span className="text-blue-600 mr-2">💡</span>
+                }
+                {hasInLegalBERTEnhancement ? "InLegalBERT Enhanced Recommendation" : "AI Legal Recommendation"}
               </h4>
-              <p className="text-sm text-blue-800 leading-relaxed">
+              <p className={`text-sm leading-relaxed ${
+                hasInLegalBERTEnhancement ? 'text-purple-800' : 'text-blue-800'
+              }`}>
                 {formattedRecommendation}
               </p>
             </div>
