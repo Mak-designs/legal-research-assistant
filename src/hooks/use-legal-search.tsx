@@ -7,8 +7,11 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
   const [query, setQuery] = useState<string>(initialQuery || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [results, setResults] = useState<any | null>(null);
-  const [jurisdiction, setJurisdiction] = useState<string>("general");
+  const [jurisdiction] = useState<string>("zambian"); // Fixed to Zambian
   const [apiStatus, setApiStatus] = useState<"available" | "quota_exceeded" | "error" | null>(null);
+
+  // Dummy setJurisdiction to maintain interface compatibility
+  const setJurisdiction = () => {};
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,24 +27,21 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Enhance the query with jurisdiction context
-      let enhancedQuery = query;
-      if (jurisdiction === "zambian") {
-        enhancedQuery = `Zambian law: ${query}`;
-        
-        // Add specific keywords for digital evidence if relevant
-        if (query.toLowerCase().includes('evidence') || 
-            query.toLowerCase().includes('digital') || 
-            query.toLowerCase().includes('electronic')) {
-          enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
-        }
+      // Enhance the query with Zambian law context
+      let enhancedQuery = `Zambian law: ${query}`;
+      
+      // Add specific keywords for digital evidence if relevant
+      if (query.toLowerCase().includes('evidence') || 
+          query.toLowerCase().includes('digital') || 
+          query.toLowerCase().includes('electronic')) {
+        enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
       }
       
       // Use the AI-powered legal research function
       const { data, error } = await supabase.functions.invoke('ai-legal-research', {
         body: { 
           query: enhancedQuery,
-          jurisdiction: jurisdiction
+          jurisdiction: "zambian"
         }
       });
       
@@ -65,7 +65,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       if (session?.user) {
         try {
           await supabase.from('search_history').insert({
-            query: `${jurisdiction === "zambian" ? "[Zambian] " : ""}${query}`,
+            query: `[Zambian] ${query}`,
             user_id: session.user.id,
             results_count: data.comparison.commonLaw.caseExamples.length + 
                           data.comparison.contractLaw.caseExamples.length
@@ -86,15 +86,12 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        let enhancedQuery = query;
-        if (jurisdiction === "zambian") {
-          enhancedQuery = `Zambian law: ${query}`;
-          
-          if (query.toLowerCase().includes('evidence') || 
-              query.toLowerCase().includes('digital') || 
-              query.toLowerCase().includes('electronic')) {
-            enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
-          }
+        let enhancedQuery = `Zambian law: ${query}`;
+        
+        if (query.toLowerCase().includes('evidence') || 
+            query.toLowerCase().includes('digital') || 
+            query.toLowerCase().includes('electronic')) {
+          enhancedQuery += " considering Cyber Security and Cyber Crimes Act No. 2 of 2021 and Zambian Evidence Act";
         }
         
         const { data, error } = await supabase.functions.invoke('legal-search', {
@@ -108,7 +105,7 @@ export const useLegalSearch = (initialQuery: string | null = null) => {
         if (session?.user) {
           try {
             await supabase.from('search_history').insert({
-              query: `${jurisdiction === "zambian" ? "[Zambian] " : ""}${query} (fallback)`,
+              query: `[Zambian] ${query} (fallback)`,
               user_id: session.user.id,
               results_count: data.comparison.commonLaw.caseExamples.length + 
                             data.comparison.contractLaw.caseExamples.length

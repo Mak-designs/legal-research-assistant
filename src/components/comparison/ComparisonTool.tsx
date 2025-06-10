@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QueryForm from "./QueryForm";
-import ComparisonResults from "./ComparisonResults";
+import ConversationalResults from "./ConversationalResults";
 import DetailedAnalysisTab from "./DetailedAnalysisTab";
 import { useLegalSearch } from "@/hooks/use-legal-search";
 
@@ -34,13 +34,13 @@ const ComparisonTool: React.FC<ComparisonToolProps> = ({ initialQuery = null }) 
       />
       
       {results && (
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="analysis" className="w-full">
           <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
+            <TabsTrigger value="analysis">Legal Analysis</TabsTrigger>
+            <TabsTrigger value="detailed">Supporting Details</TabsTrigger>
           </TabsList>
-          <TabsContent value="overview">
-            <ComparisonResults results={results} apiStatus={apiStatus} />
+          <TabsContent value="analysis">
+            <ConversationalResults results={results} apiStatus={apiStatus} />
           </TabsContent>
           <TabsContent value="detailed">
             <DetailedAnalysisTab results={results} />
