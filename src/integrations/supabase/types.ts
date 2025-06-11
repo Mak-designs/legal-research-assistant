@@ -130,6 +130,108 @@ export type Database = {
           },
         ]
       }
+      zambian_cases: {
+        Row: {
+          case_facts: string | null
+          case_summary: string | null
+          citation: string
+          court_name: string | null
+          created_at: string
+          decision_date: string | null
+          id: string
+          judges: string[] | null
+          judgment: string | null
+          keywords: string[] | null
+          legal_domain: string | null
+          legal_principles: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          case_facts?: string | null
+          case_summary?: string | null
+          citation: string
+          court_name?: string | null
+          created_at?: string
+          decision_date?: string | null
+          id?: string
+          judges?: string[] | null
+          judgment?: string | null
+          keywords?: string[] | null
+          legal_domain?: string | null
+          legal_principles?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          case_facts?: string | null
+          case_summary?: string | null
+          citation?: string
+          court_name?: string | null
+          created_at?: string
+          decision_date?: string | null
+          id?: string
+          judges?: string[] | null
+          judgment?: string | null
+          keywords?: string[] | null
+          legal_domain?: string | null
+          legal_principles?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zambian_statutes: {
+        Row: {
+          amended_date: string | null
+          chapter_number: string | null
+          citation: string
+          created_at: string
+          enacted_date: string | null
+          id: string
+          keywords: string[] | null
+          legal_domain: string | null
+          section_number: string | null
+          status: string | null
+          statute_text: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amended_date?: string | null
+          chapter_number?: string | null
+          citation: string
+          created_at?: string
+          enacted_date?: string | null
+          id?: string
+          keywords?: string[] | null
+          legal_domain?: string | null
+          section_number?: string | null
+          status?: string | null
+          statute_text: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amended_date?: string | null
+          chapter_number?: string | null
+          citation?: string
+          created_at?: string
+          enacted_date?: string | null
+          id?: string
+          keywords?: string[] | null
+          legal_domain?: string | null
+          section_number?: string | null
+          status?: string | null
+          statute_text?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
